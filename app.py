@@ -9,7 +9,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 
-# ============================================================
 # PAGE CONFIG
 # ============================================================
 
@@ -310,4 +309,4 @@ st.dataframe(df, use_container_width=True)
 
 st.markdown("---")
 st.caption("Developed for Smart Water Treatment Plant Monitoring")
-```
+
