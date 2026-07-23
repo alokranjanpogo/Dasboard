@@ -1,360 +1,916 @@
 # ==========================================================
-# Chemical Consumption & Stock Management Dashboard
+# Chemical Dashboard
 # ==========================================================
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+
 from streamlit_option_menu import option_menu
 
 from utils.loader import *
 
 # ==========================================================
-# Page Configuration
+# PAGE CONFIG
 # ==========================================================
 
 st.set_page_config(
-    page_title="Chemical Consumption & Stock Dashboard",
+    page_title="Chemical Dashboard",
     page_icon="🧪",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
 # ==========================================================
-# Custom CSS
+# CSS
 # ==========================================================
 
 st.markdown("""
 <style>
 
-.block-container{
-padding-top:1rem;
-padding-bottom:1rem;
-}
-
 .main{
-background:#f5f7fb;
-}
-
-.metric-card{
-background:white;
-padding:15px;
-border-radius:12px;
-box-shadow:0px 2px 8px rgba(0,0,0,0.10);
+background:#F4F8FB;
 }
 
 h1,h2,h3{
 color:#003366;
 }
 
+div[data-testid="stMetric"]{
+
+background:white;
+
+padding:15px;
+
+border-radius:10px;
+
+box-shadow:0px 2px 8px rgba(0,0,0,0.15);
+
+}
+
 </style>
+
 """,unsafe_allow_html=True)
 
 # ==========================================================
-# Dashboard Title
+# LOAD DATA
 # ==========================================================
 
-st.title("🧪 Chemical Consumption & Stock Management Dashboard")
+master = build_master_stock()
 
-st.caption(
-"Water Management Division | Chemical Inventory Analytics"
-)
-
-# ==========================================================
-# Load Data
-# ==========================================================
-
-master_df = build_master_stock()
+summary = dashboard_summary()
 
 latest_date, latest_stock = get_latest_stock()
 
 # ==========================================================
-# Sidebar Filters
+# TITLE
 # ==========================================================
 
-st.sidebar.title("Dashboard Filters")
+st.title("🧪 Chemical Consumption & Stock Dashboard")
 
-years = ["All"] + list(get_years())
-
-selected_year = st.sidebar.selectbox(
-    "Select Year",
-    years
+st.caption(
+"Tata Steel UISL | Water Management Division"
 )
 
-if selected_year=="All":
+# ==========================================================
+# SIDEBAR
+# ==========================================================
 
-    filtered = master_df.copy()
+st.sidebar.title("Filters")
 
-else:
+years=["All"]+get_years()
 
-    filtered = filter_stock(
-        year=selected_year
-    )
-
-months=["All"]+sorted(
-filtered["Month"].dropna().unique().tolist()
+selected_year=st.sidebar.selectbox(
+"Year",
+years
 )
+
+months=["All"]+get_months(selected_year)
 
 selected_month=st.sidebar.selectbox(
-"Select Month",
+"Month",
 months
 )
 
-if selected_month!="All":
-
-    filtered=filtered[
-    filtered["Month"]==selected_month
-    ]
-
-weeks=["All"]+sorted(
-filtered["Week"].dropna().unique().tolist()
+weeks=["All"]+list(
+get_weeks(
+selected_year,
+selected_month
+)
 )
 
 selected_week=st.sidebar.selectbox(
-"Select Week",
+"Week",
 weeks
 )
 
-if selected_week!="All":
-
-    filtered=filtered[
-    filtered["Week"]==selected_week
-    ]
-
-chemicals=["All"]+sorted(
-filtered["Chemical"].dropna().unique().tolist()
-)
+chemicals=["All"]+get_chemicals()
 
 selected_chemical=st.sidebar.selectbox(
-"Select Chemical",
+"Chemical",
 chemicals
 )
 
-if selected_chemical!="All":
+filtered=filter_data(
 
-    filtered=filtered[
-    filtered["Chemical"]==selected_chemical
-    ]
+selected_year,
 
-# ==========================================================
-# Navigation
-# ==========================================================
+selected_month,
 
-selected = option_menu(
-menu_title=None,
-options=[
-"Executive Dashboard",
-"Consumption Analysis",
-"Stock Status",
-"Procurement",
-"Forecast",
-"Reports"
-],
-icons=[
-"speedometer2",
-"graph-up",
-"boxes",
-"truck",
-"bar-chart",
-"file-earmark-pdf"
-],
-orientation="horizontal"
+selected_week,
+
+selected_chemical
+
 )
+
+st.sidebar.divider()
+
+st.sidebar.success(
+
+f"Rows Loaded : {len(filtered)}"
+
+)
+
 # ==========================================================
-# Executive Dashboard
+# MENU
+# ==========================================================
+
+selected=option_menu(
+
+menu_title=None,
+
+options=[
+
+"Executive Dashboard",
+
+"Consumption Analysis",
+
+"Stock Status",
+
+"Procurement",
+
+"Forecast",
+
+"Reports"
+
+],
+
+icons=[
+
+"speedometer2",
+
+"bar-chart",
+
+"boxes",
+
+"truck",
+
+"graph-up",
+
+"file-earmark-text"
+
+],
+
+orientation="horizontal"
+
+)
+
+# ==========================================================
+# EXECUTIVE DASHBOARD
 # ==========================================================
 
 if selected == "Executive Dashboard":
 
     st.header("📊 Executive Dashboard")
 
-    latest_date, latest_stock = get_latest_stock()
-
-    st.success(f"Latest Stock Updated : {latest_date}")
-
     if filtered.empty:
 
-        st.warning("⚠ No data available for selected filter.")
+        st.warning("⚠ No data available for selected filters.")
 
         st.stop()
 
-    # ======================================================
-    # Data Cleaning
-    # ======================================================
-
-    display = filtered.copy()
-
-    numeric_cols = [
-        "Daily Requirement",
-        "Monthly Requirement",
-        "3 Month Requirement",
-        "Available Stock",
-        "Available Days"
-    ]
-
-    for col in numeric_cols:
-
-        display[col] = pd.to_numeric(
-            display[col],
-            errors="coerce"
-        )
-
-    display = display.dropna(subset=["Chemical"])
-
-    display = display.fillna(0)
-
-    # ======================================================
-    # Stock Status
-    # ======================================================
-
-    def stock_status(days):
-
-        if days >= 90:
-            return "Healthy"
-
-        elif days >= 30:
-            return "Warning"
-
-        else:
-            return "Critical"
-
-    display["Status"] = display["Available Days"].apply(stock_status)
-
-    # ======================================================
-    # KPI Calculation
-    # ======================================================
-
-    total_stock = round(
-        display["Available Stock"].sum(),
-        2
-    )
-
-    total_daily = round(
-        display["Daily Requirement"].sum(),
-        2
-    )
-
-    total_monthly = round(
-        display["Monthly Requirement"].sum(),
-        2
-    )
-
-    total_chemicals = display["Chemical"].nunique()
-
-    healthy = len(
-        display[
-            display["Status"] == "Healthy"
-        ]
-    )
-
-    warning = len(
-        display[
-            display["Status"] == "Warning"
-        ]
-    )
-
-    critical = len(
-        display[
-            display["Status"] == "Critical"
-        ]
-    )
-
-    # ======================================================
-    # KPI Cards
-    # ======================================================
+    display = stock_health(filtered)
 
     st.subheader("Executive Summary")
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1,c2,c3,c4 = st.columns(4)
 
     with c1:
 
         st.metric(
-            "Chemicals",
-            total_chemicals
+            "🧪 Chemicals",
+            summary["Total Chemicals"]
         )
 
     with c2:
 
         st.metric(
-            "Available Stock",
-            f"{total_stock:.2f} Ton"
+            "📦 Total Stock",
+            f'{summary["Total Stock"]:.2f} Ton'
         )
 
     with c3:
 
         st.metric(
-            "Daily Requirement",
-            f"{total_daily:.2f} Ton"
+            "📅 Daily Requirement",
+            f'{summary["Daily Requirement"]:.2f} Ton'
         )
 
     with c4:
 
         st.metric(
-            "Monthly Requirement",
-            f"{total_monthly:.2f} Ton"
+            "🗓 Monthly Requirement",
+            f'{summary["Monthly Requirement"]:.2f} Ton'
         )
 
     st.divider()
 
     # ======================================================
-    # Health Summary
+    # HEALTH CARDS
     # ======================================================
 
-    c1, c2, c3 = st.columns(3)
+    st.subheader("Inventory Health")
+
+    c1,c2,c3 = st.columns(3)
 
     with c1:
 
-        st.success(f"🟢 Healthy : {healthy}")
+        st.success(
+            f'🟢 Healthy : {summary["Healthy"]}'
+        )
 
     with c2:
 
-        st.warning(f"🟡 Warning : {warning}")
+        st.warning(
+            f'🟡 Warning : {summary["Warning"]}'
+        )
 
     with c3:
 
-        st.error(f"🔴 Critical : {critical}")
+        st.error(
+            f'🔴 Critical : {summary["Critical"]}'
+        )
 
     st.divider()
 
     # ======================================================
-    # Current Stock Table
+    # STOCK TABLE
     # ======================================================
 
-    st.subheader("Current Chemical Stock")
+    st.subheader("Current Stock")
 
     st.dataframe(
+
         display,
-        use_container_width=True,
+
         hide_index=True,
-        height=450
+
+        use_container_width=True,
+
+        height=420
+
     )
+
+    st.divider()
+
     # ======================================================
-    # Available Stock Chart
+    # AVAILABLE STOCK
     # ======================================================
 
-    st.subheader("📈 Available Stock by Chemical")
+    st.subheader("Available Stock by Chemical")
 
     fig = px.bar(
+
         display,
+
         x="Chemical",
+
         y="Available Stock",
+
         color="Status",
+
         text="Available Stock",
-        height=500,
+
         color_discrete_map={
+
             "Healthy":"green",
+
             "Warning":"orange",
+
             "Critical":"red"
-        }
+
+        },
+
+        height=520
+
     )
 
     fig.update_layout(
+
+        template="plotly_white",
+
         xaxis_title="Chemical",
-        yaxis_title="Available Stock (Ton)",
-        legend_title="Stock Health",
+
+        yaxis_title="Stock (Ton)"
+
+    )
+
+    fig.update_traces(
+
+        textposition="outside"
+
+    )
+
+    st.plotly_chart(
+
+        fig,
+
+        use_container_width=True
+
+    )
+
+    # ======================================================
+    # AVAILABLE DAYS
+    # ======================================================
+
+    st.subheader("Remaining Stock Days")
+
+    fig = px.bar(
+
+        display,
+
+        x="Chemical",
+
+        y="Available Days",
+
+        color="Status",
+
+        text="Available Days",
+
+        color_discrete_map={
+
+            "Healthy":"green",
+
+            "Warning":"orange",
+
+            "Critical":"red"
+
+        },
+
+        height=520
+
+    )
+
+    fig.update_layout(
+
         template="plotly_white"
+
+    )
+
+    st.plotly_chart(
+
+        fig,
+
+        use_container_width=True
+
+    )
+
+    # ======================================================
+    # PIE
+    # ======================================================
+
+    st.subheader("Stock Distribution")
+
+    fig = px.pie(
+
+        display,
+
+        names="Chemical",
+
+        values="Available Stock",
+
+        hole=.60
+
+    )
+
+    st.plotly_chart(
+
+        fig,
+
+        use_container_width=True
+
+    )
+
+    st.divider()
+
+ # ======================================================
+    # CRITICAL CHEMICAL ALERT
+    # ======================================================
+
+    st.subheader("🚨 Critical Chemical Alert")
+
+    critical_df = display[
+        display["Status"] == "Critical"
+    ]
+
+    if critical_df.empty:
+
+        st.success(
+            "✅ No critical chemicals found."
+        )
+
+    else:
+
+        st.error(
+            f"{len(critical_df)} chemical(s) require immediate procurement."
+        )
+
+        st.dataframe(
+
+            critical_df[
+                [
+                    "Chemical",
+                    "Available Stock",
+                    "Available Days",
+                    "Vendor"
+                ]
+            ],
+
+            hide_index=True,
+
+            use_container_width=True
+
+        )
+
+    st.divider()
+
+    # ======================================================
+    # VENDOR SUMMARY
+    # ======================================================
+
+    st.subheader("🏭 Vendor Summary")
+
+    vendor = (
+
+        display
+
+        .groupby(
+            "Vendor",
+            as_index=False
+        )
+
+        .agg({
+
+            "Chemical":"count",
+
+            "Available Stock":"sum",
+
+            "Available Days":"mean"
+
+        })
+
+    )
+
+    vendor.columns=[
+
+        "Vendor",
+
+        "Chemicals",
+
+        "Total Stock",
+
+        "Average Days"
+
+    ]
+
+    st.dataframe(
+
+        vendor,
+
+        hide_index=True,
+
+        use_container_width=True
+
+    )
+
+    st.divider()
+
+    # ======================================================
+    # STOCK HEALTH DONUT
+    # ======================================================
+
+    st.subheader("🟢 Inventory Health")
+
+    health = (
+
+        display
+
+        .groupby(
+            "Status",
+            as_index=False
+        )
+
+        .size()
+
+    )
+
+    fig = px.pie(
+
+        health,
+
+        names="Status",
+
+        values="size",
+
+        hole=0.65,
+
+        color="Status",
+
+        color_discrete_map={
+
+            "Healthy":"green",
+
+            "Warning":"orange",
+
+            "Critical":"red"
+
+        }
+
+    )
+
+    fig.update_layout(
+
+        template="plotly_white"
+
+    )
+
+    st.plotly_chart(
+
+        fig,
+
+        use_container_width=True
+
+    )
+
+    st.divider()
+
+    # ======================================================
+    # INVENTORY SUMMARY
+    # ======================================================
+
+    st.subheader("📋 Inventory Summary")
+
+    inventory = display[
+
+        [
+
+            "Chemical",
+
+            "Available Stock",
+
+            "Available Days",
+
+            "Vendor",
+
+            "Status"
+
+        ]
+
+    ].sort_values(
+
+        "Available Days"
+
+    )
+
+    st.dataframe(
+
+        inventory,
+
+        use_container_width=True,
+
+        hide_index=True,
+
+        height=420
+
+    )
+
+    st.divider()
+
+    # ======================================================
+    # DOWNLOAD REPORT
+    # ======================================================
+
+    st.subheader("📥 Download Executive Report")
+
+    csv = inventory.to_csv(
+        index=False
+    ).encode("utf-8")
+
+    st.download_button(
+
+        "📄 Download CSV",
+
+        csv,
+
+        file_name="Executive_Dashboard_Report.csv",
+
+        mime="text/csv"
+
+    )
+
+    st.divider()
+
+    # ======================================================
+    # EXECUTIVE REMARKS
+    # ======================================================
+
+    st.subheader("📝 Executive Remarks")
+
+    if summary["Critical"] > 0:
+
+        st.error(
+
+            "Immediate procurement is recommended for critical chemicals."
+
+        )
+
+    elif summary["Warning"] > 0:
+
+        st.warning(
+
+            "Some chemicals are approaching the reorder level."
+
+        )
+
+    else:
+
+        st.success(
+
+            "Inventory is healthy. No immediate procurement required."
+
+        )
+
+    # ==========================================================
+    # CONSUMPTION ANALYSIS
+    # ==========================================================
+    
+    elif selected == "Consumption Analysis":
+    
+        st.header("📈 Chemical Consumption Analysis")
+    
+        consumption = calculate_consumption()
+    
+        if consumption.empty:
+    
+            st.warning("⚠ No data available.")
+    
+            st.stop()
+
+    # ===========================================
+    # FILTERS
+    # ===========================================
+
+    if selected_year != "All":
+
+        consumption = consumption[
+            consumption["Year"] == selected_year
+        ]
+
+    if selected_month != "All":
+
+        consumption = consumption[
+            consumption["Month"] == selected_month
+        ]
+
+    if selected_week != "All":
+
+        consumption = consumption[
+            consumption["Week"] == selected_week
+        ]
+
+    if selected_chemical != "All":
+
+        consumption = consumption[
+            consumption["Chemical"] == selected_chemical
+        ]
+
+    if consumption.empty:
+
+        st.warning("No data available for selected filter.")
+
+        st.stop()
+
+    # ===========================================
+    # KPI
+    # ===========================================
+
+    st.subheader("Consumption Summary")
+
+    c1,c2,c3,c4 = st.columns(4)
+
+    with c1:
+
+        st.metric(
+
+            "Total Consumption",
+
+            f"{consumption['Consumption'].sum():.2f} Ton"
+
+        )
+
+    with c2:
+
+        st.metric(
+
+            "Average Daily",
+
+            f"{consumption['Consumption'].mean():.2f} Ton"
+
+        )
+
+    with c3:
+
+        st.metric(
+
+            "Maximum",
+
+            f"{consumption['Consumption'].max():.2f} Ton"
+
+        )
+
+    with c4:
+
+        st.metric(
+
+            "Chemicals",
+
+            consumption["Chemical"].nunique()
+
+        )
+
+    st.divider()
+
+    # ===========================================
+    # DAILY TREND
+    # ===========================================
+
+    st.subheader("📅 Daily Consumption Trend")
+
+    daily = (
+
+        consumption
+
+        .groupby(
+
+            "Date",
+
+            as_index=False
+
+        )["Consumption"]
+
+        .sum()
+
+    )
+
+    fig = px.line(
+
+        daily,
+
+        x="Date",
+
+        y="Consumption",
+
+        markers=True
+
+    )
+
+    fig.update_layout(
+
+        template="plotly_white"
+
+    )
+
+    st.plotly_chart(
+
+        fig,
+
+        use_container_width=True
+
+    )
+
+    # ===========================================
+    # CHEMICAL CONSUMPTION
+    # ===========================================
+
+    st.subheader("🧪 Chemical-wise Consumption")
+
+    chemical = (
+
+        consumption
+
+        .groupby(
+
+            "Chemical",
+
+            as_index=False
+
+        )["Consumption"]
+
+        .sum()
+
+    )
+
+    fig = px.bar(
+
+        chemical,
+
+        x="Chemical",
+
+        y="Consumption",
+
+        text="Consumption",
+
+        color="Chemical",
+
+        height=500
+
+    )
+
+    fig.update_layout(
+
+        template="plotly_white",
+
+        showlegend=False
+
+    )
+
+    fig.update_traces(
+
+        textposition="outside"
+
+    )
+
+    st.plotly_chart(
+
+        fig,
+
+        use_container_width=True
+
+    )
+
+    # ===========================================
+    # PIE CHART
+    # ===========================================
+
+    st.subheader("🥧 Consumption Distribution")
+
+    fig = px.pie(
+
+        chemical,
+
+        names="Chemical",
+
+        values="Consumption",
+
+        hole=0.60
+
+    )
+
+    st.plotly_chart(
+
+        fig,
+
+        use_container_width=True
+
+    )
+    # ======================================================
+    # WEEKLY CONSUMPTION
+    # ======================================================
+
+    st.subheader("📅 Weekly Consumption")
+
+    weekly = (
+        consumption
+        .groupby(
+            "Week",
+            as_index=False
+        )["Consumption"]
+        .sum()
+    )
+
+    fig = px.bar(
+        weekly,
+        x="Week",
+        y="Consumption",
+        text="Consumption",
+        color="Consumption",
+        height=450
+    )
+
+    fig.update_layout(
+        template="plotly_white",
+        xaxis_title="Week",
+        yaxis_title="Consumption (Ton)"
     )
 
     fig.update_traces(
@@ -367,295 +923,38 @@ if selected == "Executive Dashboard":
     )
 
     # ======================================================
-    # Available Days Chart
+    # MONTHLY CONSUMPTION
     # ======================================================
 
-    st.subheader("📅 Available Days")
+    st.subheader("📆 Monthly Consumption")
 
-    fig = px.bar(
-        display,
-        x="Chemical",
-        y="Available Days",
-        color="Status",
-        text="Available Days",
-        height=500,
-        color_discrete_map={
-            "Healthy":"green",
-            "Warning":"orange",
-            "Critical":"red"
-        }
+    monthly = (
+        consumption
+        .groupby(
+            "Month",
+            as_index=False
+        )["Consumption"]
+        .sum()
     )
 
-    fig.update_layout(
-        xaxis_title="Chemical",
-        yaxis_title="Available Days",
-        template="plotly_white"
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-
-    # ======================================================
-    # Chemical Distribution
-    # ======================================================
-
-    st.subheader("🥧 Available Stock Distribution")
-
-    fig = px.pie(
-        display,
-        names="Chemical",
-        values="Available Stock",
-        hole=0.55
-    )
-
-    fig.update_layout(
-        template="plotly_white"
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-
-    # ======================================================
-    # Critical Chemicals
-    # ======================================================
-
-    st.subheader("🚨 Critical Chemicals")
-
-    critical_df = display[
-        display["Status"]=="Critical"
+    month_order = [
+        "January","February","March","April",
+        "May","June","July","August",
+        "September","October","November","December"
     ]
 
-    if critical_df.empty:
-
-        st.success(
-            "✅ No critical chemicals available."
-        )
-
-    else:
-
-        st.error(
-            "Immediate procurement required."
-        )
-
-        st.dataframe(
-            critical_df,
-            use_container_width=True,
-            hide_index=True
-        )
-
-    st.divider()
-
-    # ======================================================
-    # Vendor Summary
-    # ======================================================
-
-    st.subheader("🏭 Vendor Summary")
-
-    vendor = (
-        display.groupby("Vendor")
-        .agg({
-            "Available Stock":"sum",
-            "Chemical":"count"
-        })
-        .reset_index()
+    monthly["Month"] = pd.Categorical(
+        monthly["Month"],
+        categories=month_order,
+        ordered=True
     )
 
-    vendor.columns=[
-        "Vendor",
-        "Total Stock",
-        "Chemicals"
-    ]
-
-    st.dataframe(
-        vendor,
-        use_container_width=True,
-        hide_index=True
-    )
-
-    # ======================================================
-    # Executive Remarks
-    # ======================================================
-
-    st.subheader("📋 Executive Remarks")
-
-    if critical > 0:
-
-        st.error(
-            f"{critical} chemicals require immediate procurement."
-        )
-
-    elif warning > 0:
-
-        st.warning(
-            f"{warning} chemicals should be reordered soon."
-        )
-
-    else:
-
-        st.success(
-            "Inventory level is healthy."
-        )
-        # ==========================================================
-# Consumption Analysis
-# ==========================================================
-
-elif selected == "Consumption Analysis":
-
-    st.header("📈 Chemical Consumption Analysis")
-
-    if filtered.empty:
-
-        st.warning("⚠ No data available for selected filters.")
-
-        st.stop()
-
-    consumption = filtered.copy()
-
-    consumption["Available Stock"] = pd.to_numeric(
-        consumption["Available Stock"],
-        errors="coerce"
-    )
-
-    consumption["Daily Requirement"] = pd.to_numeric(
-        consumption["Daily Requirement"],
-        errors="coerce"
-    )
-
-    # ======================================================
-    # KPI Cards
-    # ======================================================
-
-    st.subheader("Consumption Summary")
-
-    c1, c2, c3, c4 = st.columns(4)
-
-    with c1:
-
-        st.metric(
-            "Chemicals",
-            consumption["Chemical"].nunique()
-        )
-
-    with c2:
-
-        st.metric(
-            "Total Available Stock",
-            f"{consumption['Available Stock'].sum():.2f} Ton"
-        )
-
-    with c3:
-
-        st.metric(
-            "Daily Consumption",
-            f"{consumption['Daily Requirement'].sum():.2f} Ton"
-        )
-
-    with c4:
-
-        if consumption["Daily Requirement"].sum() > 0:
-
-            days = consumption["Available Stock"].sum() / consumption["Daily Requirement"].sum()
-
-        else:
-
-            days = 0
-
-        st.metric(
-            "Estimated Days",
-            f"{days:.1f}"
-        )
-
-    st.divider()
-
-    # ======================================================
-    # Chemical Consumption
-    # ======================================================
-
-    st.subheader("🧪 Chemical-wise Daily Consumption")
-
-    fig = px.bar(
-        consumption,
-        x="Chemical",
-        y="Daily Requirement",
-        text="Daily Requirement",
-        color="Chemical",
-        height=500
-    )
-
-    fig.update_layout(
-        xaxis_title="Chemical",
-        yaxis_title="Daily Consumption (Ton)",
-        showlegend=False,
-        template="plotly_white"
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-
-    # ======================================================
-    # Available Stock
-    # ======================================================
-
-    st.subheader("📦 Available Stock")
-
-    fig = px.bar(
-        consumption,
-        x="Chemical",
-        y="Available Stock",
-        color="Chemical",
-        text="Available Stock",
-        height=500
-    )
-
-    fig.update_layout(
-        template="plotly_white",
-        showlegend=False
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-
-    # ======================================================
-    # Pie Chart
-    # ======================================================
-
-    st.subheader("🥧 Consumption Distribution")
-
-    fig = px.pie(
-        consumption,
-        names="Chemical",
-        values="Daily Requirement",
-        hole=0.55
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-
-    # ======================================================
-    # Trend Analysis
-    # ======================================================
-
-    st.subheader("📈 Daily Requirement Trend")
-
-    trend = consumption.groupby(
-        "Date",
-        as_index=False
-    )["Daily Requirement"].sum()
+    monthly = monthly.sort_values("Month")
 
     fig = px.line(
-        trend,
-        x="Date",
-        y="Daily Requirement",
+        monthly,
+        x="Month",
+        y="Consumption",
         markers=True
     )
 
@@ -669,21 +968,26 @@ elif selected == "Consumption Analysis":
     )
 
     # ======================================================
-    # Monthly Consumption
+    # YEARLY CONSUMPTION
     # ======================================================
 
-    st.subheader("📅 Monthly Consumption")
+    st.subheader("📈 Yearly Consumption")
 
-    monthly = consumption.groupby(
-        "Month",
-        as_index=False
-    )["Daily Requirement"].sum()
+    yearly = (
+        consumption
+        .groupby(
+            "Year",
+            as_index=False
+        )["Consumption"]
+        .sum()
+    )
 
     fig = px.bar(
-        monthly,
-        x="Month",
-        y="Daily Requirement",
-        text="Daily Requirement"
+        yearly,
+        x="Year",
+        y="Consumption",
+        text="Consumption",
+        height=450
     )
 
     fig.update_layout(
@@ -696,417 +1000,48 @@ elif selected == "Consumption Analysis":
     )
 
     # ======================================================
-    # Consumption Table
+    # TOP CONSUMING CHEMICAL
+    # ======================================================
+
+    st.subheader("🏆 Top Consuming Chemicals")
+
+    top = chemical.sort_values(
+        "Consumption",
+        ascending=False
+    )
+
+    st.dataframe(
+        top,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    # ======================================================
+    # CONSUMPTION DETAILS
     # ======================================================
 
     st.subheader("📋 Consumption Details")
 
     st.dataframe(
-        consumption,
+        consumption.sort_values(
+            ["Date", "Chemical"]
+        ),
         use_container_width=True,
         hide_index=True,
-        height=500
-    )
-    # ==========================================================
-# Stock Status Dashboard
-# ==========================================================
-
-elif selected == "Stock Status":
-
-    st.header("📦 Chemical Stock Status")
-
-    if filtered.empty:
-
-        st.warning("⚠ No data available.")
-
-        st.stop()
-
-    stock = filtered.copy()
-
-    numeric_cols = [
-        "Daily Requirement",
-        "Monthly Requirement",
-        "3 Month Requirement",
-        "Available Stock",
-        "Available Days"
-    ]
-
-    for col in numeric_cols:
-
-        stock[col] = pd.to_numeric(
-            stock[col],
-            errors="coerce"
-        )
-
-    stock = stock.fillna(0)
-
-    def status(days):
-
-        if days >= 90:
-            return "Healthy"
-
-        elif days >= 30:
-            return "Warning"
-
-        else:
-            return "Critical"
-
-    stock["Status"] = stock["Available Days"].apply(status)
-
-    # ======================================================
-    # KPI
-    # ======================================================
-
-    st.subheader("Inventory Summary")
-
-    c1,c2,c3,c4 = st.columns(4)
-
-    with c1:
-
-        st.metric(
-            "Total Stock",
-            round(stock["Available Stock"].sum(),2)
-        )
-
-    with c2:
-
-        st.metric(
-            "Daily Requirement",
-            round(stock["Daily Requirement"].sum(),2)
-        )
-
-    with c3:
-
-        st.metric(
-            "Average Available Days",
-            round(stock["Available Days"].mean(),1)
-        )
-
-    with c4:
-
-        st.metric(
-            "Chemicals",
-            stock["Chemical"].nunique()
-        )
-
-    st.divider()
-
-    # ======================================================
-    # Available Days
-    # ======================================================
-
-    st.subheader("📅 Remaining Days")
-
-    fig = px.bar(
-        stock,
-        x="Chemical",
-        y="Available Days",
-        color="Status",
-        text="Available Days",
-        color_discrete_map={
-            "Healthy":"green",
-            "Warning":"orange",
-            "Critical":"red"
-        }
-    )
-
-    fig.update_layout(
-        template="plotly_white"
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
+        height=450
     )
 
     # ======================================================
-    # Stock Distribution
+    # DOWNLOAD REPORT
     # ======================================================
 
-    st.subheader("🥧 Inventory Distribution")
-
-    fig = px.pie(
-        stock,
-        names="Chemical",
-        values="Available Stock",
-        hole=.55
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-
-    # ======================================================
-    # Vendor Inventory
-    # ======================================================
-
-    st.subheader("🏭 Vendor Inventory")
-
-    vendor = stock.groupby(
-        "Vendor",
-        as_index=False
-    ).agg({
-        "Available Stock":"sum",
-        "Chemical":"count"
-    })
-
-    vendor.columns = [
-        "Vendor",
-        "Total Stock",
-        "Chemicals"
-    ]
-
-    st.dataframe(
-        vendor,
-        use_container_width=True,
-        hide_index=True
-    )
-
-    # ======================================================
-    # Critical Chemicals
-    # ======================================================
-
-    st.subheader("🚨 Immediate Procurement")
-
-    critical = stock[
-        stock["Status"]=="Critical"
-    ]
-
-    if critical.empty:
-
-        st.success(
-            "No chemical requires immediate procurement."
-        )
-
-    else:
-
-        st.dataframe(
-            critical,
-            use_container_width=True,
-            hide_index=True
-        )
-
-    st.divider()
-
-    # ======================================================
-    # Complete Inventory
-    # ======================================================
-
-    st.subheader("📋 Complete Inventory")
-
-    st.dataframe(
-        stock,
-        use_container_width=True,
-        hide_index=True,
-        height=500
-    )
-    # ==========================================================
-# Procurement Dashboard
-# ==========================================================
-
-elif selected == "Procurement":
-
-    st.header("🚚 Procurement Dashboard")
-
-    if filtered.empty:
-
-        st.warning("⚠ No data available.")
-
-        st.stop()
-
-    procurement = filtered.copy()
-
-    procurement["Available Days"] = pd.to_numeric(
-        procurement["Available Days"],
-        errors="coerce"
-    )
-
-    procurement["Available Stock"] = pd.to_numeric(
-        procurement["Available Stock"],
-        errors="coerce"
-    )
-
-    procurement["Priority"] = procurement["Available Days"].apply(
-        lambda x:
-        "High" if x < 30 else
-        "Medium" if x < 90 else
-        "Low"
-    )
-
-    # ======================================================
-    # KPI
-    # ======================================================
-
-    c1,c2,c3 = st.columns(3)
-
-    with c1:
-        st.metric(
-            "High Priority",
-            len(procurement[procurement["Priority"]=="High"])
-        )
-
-    with c2:
-        st.metric(
-            "Medium Priority",
-            len(procurement[procurement["Priority"]=="Medium"])
-        )
-
-    with c3:
-        st.metric(
-            "Low Priority",
-            len(procurement[procurement["Priority"]=="Low"])
-        )
-
-    st.divider()
-
-    # ======================================================
-    # Priority Chart
-    # ======================================================
-
-    st.subheader("Priority Chemicals")
-
-    fig = px.bar(
-        procurement.sort_values("Available Days"),
-        x="Chemical",
-        y="Available Days",
-        color="Priority",
-        text="Available Days",
-        color_discrete_map={
-            "High":"red",
-            "Medium":"orange",
-            "Low":"green"
-        }
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-
-    # ======================================================
-    # Vendor Summary
-    # ======================================================
-
-    st.subheader("Vendor Wise Summary")
-
-    vendor = procurement.groupby(
-        "Vendor",
-        as_index=False
-    ).agg({
-        "Chemical":"count",
-        "Available Stock":"sum"
-    })
-
-    st.dataframe(
-        vendor,
-        use_container_width=True,
-        hide_index=True
-    )
-
-    # ======================================================
-    # Procurement Table
-    # ======================================================
-
-    st.subheader("Procurement Recommendation")
-
-    st.dataframe(
-        procurement.sort_values("Available Days"),
-        use_container_width=True,
-        hide_index=True
-    )
-
-# ==========================================================
-# Forecast Dashboard
-# ==========================================================
-
-elif selected == "Forecast":
-
-    st.header("📈 Forecast Dashboard")
-
-    if filtered.empty:
-
-        st.warning("⚠ No data available.")
-
-        st.stop()
-
-    forecast = filtered.copy()
-
-    forecast["Available Days"] = pd.to_numeric(
-        forecast["Available Days"],
-        errors="coerce"
-    )
-
-    forecast["Daily Requirement"] = pd.to_numeric(
-        forecast["Daily Requirement"],
-        errors="coerce"
-    )
-
-    forecast["Predicted Reorder (Days)"] = (
-        forecast["Available Days"] - 15
-    ).clip(lower=0)
-
-    st.subheader("Forecast Summary")
-
-    st.dataframe(
-        forecast[
-            [
-                "Chemical",
-                "Available Days",
-                "Predicted Reorder (Days)",
-                "Vendor"
-            ]
-        ],
-        use_container_width=True,
-        hide_index=True
-    )
-
-    st.subheader("Forecast Chart")
-
-    fig = px.bar(
-        forecast,
-        x="Chemical",
-        y="Predicted Reorder (Days)",
-        color="Chemical",
-        text="Predicted Reorder (Days)"
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-
-# ==========================================================
-# Reports
-# ==========================================================
-
-elif selected == "Reports":
-
-    st.header("📄 Reports")
-
-    if filtered.empty:
-
-        st.warning("⚠ No data available.")
-
-        st.stop()
-
-    st.subheader("Download Current Report")
-
-    csv = filtered.to_csv(index=False).encode("utf-8")
+    csv = consumption.to_csv(
+        index=False
+    ).encode("utf-8")
 
     st.download_button(
-        label="📥 Download CSV Report",
-        data=csv,
-        file_name="Chemical_Report.csv",
+        "📥 Download Consumption Report",
+        csv,
+        file_name="Consumption_Report.csv",
         mime="text/csv"
     )
-
-    st.subheader("Current Dataset")
-
-    st.dataframe(
-        filtered,
-        use_container_width=True,
-        hide_index=True,
-        height=600
-    )
-    
