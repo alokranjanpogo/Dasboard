@@ -235,21 +235,21 @@ c1,c2,c3 = st.columns(3)
 
 with c1:
 
-st.success(
-    f'🟢 Healthy : {summary["Healthy"]}'
-)
+    st.success(
+        f'🟢 Healthy : {summary["Healthy"]}'
+    )
 
 with c2:
 
-st.warning(
-    f'🟡 Warning : {summary["Warning"]}'
-)
+    st.warning(
+        f'🟡 Warning : {summary["Warning"]}'
+    )
 
 with c3:
 
-st.error(
-    f'🔴 Critical : {summary["Critical"]}'
-)
+    st.error(
+        f'🔴 Critical : {summary["Critical"]}'
+    )
 
 st.divider()
 
