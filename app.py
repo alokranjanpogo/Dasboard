@@ -6,11 +6,24 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-
 from streamlit_option_menu import option_menu
 
-from utils.loader import *
-
+from utils.loader import (
+    build_master_stock,
+    get_latest_stock,
+    dashboard_summary,
+    stock_health,
+    calculate_consumption,
+    weekly_consumption,
+    monthly_consumption,
+    yearly_consumption,
+    chemical_consumption,
+    filter_data,
+    get_years,
+    get_months,
+    get_weeks,
+    get_chemicals
+)
 # ==========================================================
 # PAGE CONFIG
 # ==========================================================
@@ -63,117 +76,91 @@ summary = dashboard_summary()
 latest_date, latest_stock = get_latest_stock()
 
 # ==========================================================
+# PAGE CONFIG
+# ==========================================================
+
+st.set_page_config(
+    page_title="Chemical Consumption & Stock Dashboard",
+    page_icon="🧪",
+    layout="wide"
+)
+
+# ==========================================================
 # TITLE
 # ==========================================================
 
 st.title("🧪 Chemical Consumption & Stock Dashboard")
+st.caption("Tata Steel UISL | Water Management Division")
 
-st.caption(
-"Tata Steel UISL | Water Management Division"
+# ==========================================================
+# SIDEBAR FILTERS
+# ==========================================================
+
+st.sidebar.header("Dashboard Filters")
+
+years = ["All"] + list(get_years())
+selected_year = st.sidebar.selectbox(
+    "Year",
+    years
+)
+
+months = ["All"] + list(get_months(selected_year))
+selected_month = st.sidebar.selectbox(
+    "Month",
+    months
+)
+
+weeks = ["All"] + list(get_weeks(selected_year, selected_month))
+selected_week = st.sidebar.selectbox(
+    "Week",
+    weeks
+)
+
+chemicals = ["All"] + list(get_chemicals())
+selected_chemical = st.sidebar.selectbox(
+    "Chemical",
+    chemicals
 )
 
 # ==========================================================
-# SIDEBAR
+# FILTER DATA
 # ==========================================================
 
-st.sidebar.title("Filters")
-
-years=["All"]+get_years()
-
-selected_year=st.sidebar.selectbox(
-"Year",
-years
-)
-
-months=["All"]+get_months(selected_year)
-
-selected_month=st.sidebar.selectbox(
-"Month",
-months
-)
-
-weeks=["All"]+list(
-get_weeks(
-selected_year,
-selected_month
-)
-)
-
-selected_week=st.sidebar.selectbox(
-"Week",
-weeks
-)
-
-chemicals=["All"]+get_chemicals()
-
-selected_chemical=st.sidebar.selectbox(
-"Chemical",
-chemicals
-)
-
-filtered=filter_data(
-
-selected_year,
-
-selected_month,
-
-selected_week,
-
-selected_chemical
-
-)
-
-st.sidebar.divider()
-
-st.sidebar.success(
-
-f"Rows Loaded : {len(filtered)}"
-
+inventory = filter_data(
+    year=selected_year,
+    month=selected_month,
+    week=selected_week,
+    chemical=selected_chemical
 )
 
 # ==========================================================
 # MENU
 # ==========================================================
 
-selected=option_menu(
-
-menu_title=None,
-
-options=[
-
-"Executive Dashboard",
-
-"Consumption Analysis",
-
-"Stock Status",
-
-"Procurement",
-
-"Forecast",
-
-"Reports"
-
-],
-
-icons=[
-
-"speedometer2",
-
-"bar-chart",
-
-"boxes",
-
-"truck",
-
-"graph-up",
-
-"file-earmark-text"
-
-],
-
-orientation="horizontal"
-
+selected = option_menu(
+    menu_title=None,
+    options=[
+        "Executive Dashboard",
+        "Consumption Analysis",
+        "Stock Status",
+        "Procurement",
+        "Forecast",
+        "Reports"
+    ],
+    icons=[
+        "speedometer2",
+        "bar-chart",
+        "boxes",
+        "truck",
+        "graph-up",
+        "file-earmark-text"
+    ],
+    orientation="horizontal",
+    default_index=0
 )
+# ==========================================================
+# EXECUTIVE DASHBOARD
+# ==========================================================
 
 # ==========================================================
 # EXECUTIVE DASHBOARD
@@ -181,50 +168,79 @@ orientation="horizontal"
 
 if selected == "Executive Dashboard":
 
-        st.header("📊 Executive Dashboard")
-    
-        if filtered.empty:
-    
-            st.warning("⚠ No data available for selected filters.")
-    
-            st.stop()
-    
-        display = stock_health(filtered)
-    
-        st.subheader("Executive Summary")
-    
-        c1,c2,c3,c4 = st.columns(4)
-    
-        with c1:
-    
-            st.metric(
-                "🧪 Chemicals",
-                summary["Total Chemicals"]
-            )
-    
-        with c2:
-    
-            st.metric(
-                "📦 Total Stock",
-                f'{summary["Total Stock"]:.2f} Ton'
-            )
-    
-        with c3:
-    
-            st.metric(
-                "📅 Daily Requirement",
-                f'{summary["Daily Requirement"]:.2f} Ton'
-            )
-    
-        with c4:
-    
-            st.metric(
-                "🗓 Monthly Requirement",
-                f'{summary["Monthly Requirement"]:.2f} Ton'
-            )
-    
-        st.divider()
-    
+    st.header("📊 Executive Dashboard")
+
+    if inventory.empty:
+        st.warning("No data available for selected filters.")
+        st.stop()
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric(
+            "Total Chemicals",
+            inventory["Chemical"].nunique()
+        )
+
+    with col2:
+        st.metric(
+            "Total Stock",
+            f'{inventory["Available Stock"].sum():,.2f} Ton'
+        )
+
+    with col3:
+        st.metric(
+            "Daily Requirement",
+            f'{inventory["Daily Requirement"].sum():,.2f} Ton'
+        )
+
+    with col4:
+        st.metric(
+            "Monthly Requirement",
+            f'{inventory["Monthly Requirement"].sum():,.2f} Ton'
+        )
+
+    st.divider()
+
+    inventory = stock_health(inventory)
+
+    status = (
+        inventory.groupby(
+            "Status",
+            as_index=False
+        ).size()
+    )
+
+    fig = px.pie(
+        status,
+        names="Status",
+        values="size",
+        hole=0.55
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    st.subheader("Current Inventory")
+
+    st.dataframe(
+        inventory,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    csv = inventory.to_csv(
+        index=False
+    ).encode("utf-8")
+
+    st.download_button(
+        "📥 Download Executive Report",
+        csv,
+        file_name="Executive_Report.csv",
+        mime="text/csv"
+    )
         # ======================================================
         # HEALTH CARDS
         # ======================================================
