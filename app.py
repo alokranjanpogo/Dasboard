@@ -173,7 +173,7 @@ if selected=="Executive Dashboard":
     display["Chemical"] = display["Chemical"].astype(str)
     display = display.dropna(subset=["Available Stock"])
 
-        def health(x):
+    def health(x):
         if x >= 3:
             return "🟢 Healthy"
         elif x >= 1:
