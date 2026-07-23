@@ -11,7 +11,7 @@ import pandas as pd
 # DATA FOLDER
 # ==========================================================
 
-DATA_FOLDER = "."
+DATA_FOLDER = "data"
 
 # ==========================================================
 # GET ALL YEAR FILES
