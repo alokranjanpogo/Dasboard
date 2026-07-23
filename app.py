@@ -165,14 +165,20 @@ if selected=="Executive Dashboard":
     # ==========================================
     
     st.header("📈 Available Stock by Chemical")
-    
+
+    display["Available Stock"] = pd.to_numeric(
+        display["Available Stock"],
+        errors="coerce"
+    )
+    display["chemical"] = display["chemical"].astype(str)
+    display = display.dropna(subset=["Available Stock"])
     fig=px.bar(
-    display,
-    x="Chemical",
-    y="Available Stock",
-    color="Status",
-    text="Available Stock",
-    height=500
+        display,
+        x="Chemical",
+        y="Available Stock",
+        color="Status",
+        text="Available Stock",
+        height=500
     )
     
     fig.update_layout(
