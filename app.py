@@ -72,7 +72,7 @@ elif selected=="Forecast":
 elif selected=="Reports":
     st.info("Reports Dashboard Coming in Part 8")
 
-from utils.loader import *
+from utils.loader import 
 
 st.divider()
 
