@@ -659,10 +659,7 @@ elif selected == "Consumption Analysis":
     st.header("📈 Chemical Consumption Analysis")
 
     consumption = calculate_consumption()
-    st.write("Rows:", len(consumption))
-    st.write(consumption.head())
-    st.write(consumption.columns.tolist())
-    st.stop()
+   
 
     if consumption.empty:
 
