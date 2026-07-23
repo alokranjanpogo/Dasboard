@@ -231,27 +231,27 @@ if selected == "Executive Dashboard":
 
 st.subheader("Inventory Health")
 
-    c1,c2,c3 = st.columns(3)
-    
-    with c1:
-    
-    st.success(
-        f'🟢 Healthy : {summary["Healthy"]}'
-    )
-    
-    with c2:
-    
-    st.warning(
-        f'🟡 Warning : {summary["Warning"]}'
-    )
-    
-    with c3:
-    
-    st.error(
-        f'🔴 Critical : {summary["Critical"]}'
-    )
-    
-    st.divider()
+c1,c2,c3 = st.columns(3)
+
+with c1:
+
+st.success(
+    f'🟢 Healthy : {summary["Healthy"]}'
+)
+
+with c2:
+
+st.warning(
+    f'🟡 Warning : {summary["Warning"]}'
+)
+
+with c3:
+
+st.error(
+    f'🔴 Critical : {summary["Critical"]}'
+)
+
+st.divider()
 
 # ======================================================
 # STOCK TABLE
