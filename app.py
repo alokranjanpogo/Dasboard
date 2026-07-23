@@ -1,5 +1,7 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
+import plotly.express as px
+from utils.loader import *
 
 st.set_page_config(
     page_title="Chemical Consumption Dashboard",
@@ -31,7 +33,7 @@ background:#0E4D92;
 </style>
 """,unsafe_allow_html=True)
 
-st.title("🧪 Chemical Consumption & Stock Management Dashboard")
+st.header(" Chemical Consumption & Stock Management Dashboard")
 
 selected = option_menu(
     menu_title=None,
@@ -55,7 +57,13 @@ selected = option_menu(
 )
 
 if selected=="Executive Dashboard":
-    st.info("Executive Dashboard Coming in Part 3")
+    latest_date, stock = get_latest_stock()
+
+    st.subheader("📦 Current Chemical Stock Dashboard")
+    
+    st.success(f"Latest Stock Date : {latest_date}")
+    
+    st.dataframe(stock, use_container_width=True)
 
 elif selected=="Consumption Analysis":
     st.info("Consumption Dashboard Coming in Part 4")
