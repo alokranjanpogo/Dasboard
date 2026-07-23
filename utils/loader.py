@@ -110,9 +110,13 @@ def build_master_stock():
             if df.empty:
                 continue
 
-            # Keep first 8 columns only
-            df = df.iloc[:, :8]
-
+           # Keep only first 8 columns if available
+            df = df.iloc[:, :min(8, len(df.columns))]
+            
+            # Skip sheets having fewer than 8 columns
+            if len(df.columns) < 8:
+                continue
+            
             df.columns = [
                 "Date",
                 "Chemical",
@@ -123,7 +127,6 @@ def build_master_stock():
                 "Available Days",
                 "Vendor"
             ]
-
             # Remove blank chemicals
             df = df.dropna(subset=["Chemical"])
 
