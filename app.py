@@ -658,14 +658,12 @@ elif selected == "Consumption Analysis":
 
     st.header("📈 Chemical Consumption Analysis")
 
-    consumption = calculate_consumption()
-   
+    from utils.loader import get_excel_files
 
-    if consumption.empty:
-
-        st.warning("⚠ No data available.")
-
-        st.stop()
+    st.write("Files found:")
+    st.write(get_excel_files())
+    
+    st.stop()
 
 # ===========================================
 # FILTERS
