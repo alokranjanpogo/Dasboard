@@ -170,7 +170,7 @@ if selected=="Executive Dashboard":
         display["Available Stock"],
         errors="coerce"
     )
-    display["chemical"] = display["chemical"].astype(str)
+    display["Chemical"] = display["Chemical"].astype(str)
     display = display.dropna(subset=["Available Stock"])
 
     st.write(display.columns.tolist())
