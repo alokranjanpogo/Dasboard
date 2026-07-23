@@ -137,7 +137,8 @@ if selected=="Executive Dashboard":
         "Monthly Requirement",
         "3 Month Requirement",
         "Available Stock",
-        "Available Months"
+        "Available Months",
+        "Remarks"
     ]
     
     def health(x):
