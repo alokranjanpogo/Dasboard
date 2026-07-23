@@ -634,21 +634,21 @@ if selected == "Executive Dashboard":
 
         )
 
-       elif summary["Warning"] > 0:
-    
-            st.warning(
-    
-                "Some chemicals are approaching the reorder level."
-    
-            )
-    
-        else: 
-    
-            st.success(
-    
-                "Inventory is healthy. No immediate procurement required."
-    
-            )
+   elif summary["Warning"] > 0:
+
+        st.warning(
+
+            "Some chemicals are approaching the reorder level."
+
+        )
+
+    else: 
+
+        st.success(
+
+            "Inventory is healthy. No immediate procurement required."
+
+        )
 
     # ==========================================================
     # CONSUMPTION ANALYSIS
