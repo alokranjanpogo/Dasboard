@@ -172,6 +172,10 @@ if selected=="Executive Dashboard":
     )
     display["chemical"] = display["chemical"].astype(str)
     display = display.dropna(subset=["Available Stock"])
+
+    st.write(display.columns.tolist())
+    st.write(display.head())
+    st.stop()
     fig=px.bar(
         display,
         x="Chemical",
