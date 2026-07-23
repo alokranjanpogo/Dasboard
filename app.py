@@ -33,7 +33,7 @@ background:#0E4D92;
 </style>
 """,unsafe_allow_html=True)
 
-st.header(" Chemical Consumption & Stock Management Dashboard")
+st.title(" Chemical Consumption & Stock Management Dashboard")
 
 selected = option_menu(
     menu_title=None,
@@ -57,17 +57,60 @@ selected = option_menu(
 )
 
 if selected=="Executive Dashboard":
+
+
+    # ==============================
+    # Executive Dashboard
+    # ==============================
+
+    st.title("📊 Executive Dashboard")
+
     latest_date, stock = get_latest_stock()
 
-    st.subheader("📦 Current Chemical Stock Dashboard")
-    
-    st.success(f"Latest Stock Date : {latest_date}")
-    
-    st.dataframe(stock, use_container_width=True)
-    
-    st.write(stock.columns)
-    
-    st.write(stock.head())
+    st.caption(f"Latest Stock Date : {latest_date}")
+
+    st.divider()
+
+    # ==============================
+    # KPI Cards
+    # ==============================
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric("Current Date", latest_date)
+
+    with col2:
+        st.metric("Total Chemicals", len(stock))
+
+    with col3:
+        st.metric("Data Rows", stock.shape[0])
+
+    with col4:
+        st.metric("Columns", stock.shape[1])
+
+    # ==============================
+    # Latest Stock Data
+    # ==============================
+
+    st.header("Current Chemical Stock")
+
+    st.dataframe(
+        stock,
+        use_container_width=True,
+        height=500
+    )
+
+    # ==============================
+    # Detected Columns
+    # ==============================
+
+    st.header("Detected Columns")
+
+    st.write(list(stock.columns))
+
+elif selected=="Consumption Analysis":
+    st.info("Consumption Dashboard Coming in Part 4")    
 
 elif selected=="Consumption Analysis":
     st.info("Consumption Dashboard Coming in Part 4")
