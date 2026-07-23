@@ -64,6 +64,10 @@ if selected=="Executive Dashboard":
     st.success(f"Latest Stock Date : {latest_date}")
     
     st.dataframe(stock, use_container_width=True)
+    
+    st.write(stock.columns)
+    
+    st.write(stock.head())
 
 elif selected=="Consumption Analysis":
     st.info("Consumption Dashboard Coming in Part 4")
@@ -82,18 +86,3 @@ elif selected=="Reports":
 
 from utils.loader import *
 
-st.divider()
-
-st.subheader("Excel Connection Test")
-
-consumption_sheets,stock_sheets=get_sheet_names()
-
-col1,col2=st.columns(2)
-
-with col1:
-    st.success("Consumption File")
-    st.write(consumption_sheets)
-
-with col2:
-    st.success("Stock File")
-    st.write(stock_sheets)
