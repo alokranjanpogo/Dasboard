@@ -24,10 +24,16 @@ def get_latest_stock():
 
     sheets = load_stock()
 
-    latest_sheet = list(sheets.keys())[-1]
+    latest_sheet = None
+    latest_df = None
 
-    df = sheets[latest_sheet]
+    for sheet_name, df in reversed(list(sheets.items())):
 
-    df = df.dropna(how="all")
+        df = df.dropna(how="all")
 
-    return latest_sheet, df
+        if not df.empty:
+            latest_sheet = sheet_name
+            latest_df = df
+            break
+
+    return latest_sheet, latest_df
