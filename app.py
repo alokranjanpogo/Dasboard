@@ -140,8 +140,8 @@ if selected=="Executive Dashboard":
     "Available Months"
     ]
     
-    def health(x):
-    
+        def health(x):
+        
         if x>=3:
             return "🟢 Healthy"
         
@@ -150,7 +150,7 @@ if selected=="Executive Dashboard":
         
         else:
             return "🔴 Critical"
-        
+            
         display["Status"]=display["Available Months"].apply(health)
         
         st.dataframe(
