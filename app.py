@@ -74,18 +74,18 @@ elif selected=="Reports":
 
 from utils.loader import 
 
-st.divider()
-
-st.subheader("Excel Connection Test")
-
-consumption_sheets,stock_sheets=get_sheet_names()
-
-col1,col2=st.columns(2)
-
-with col1:
+    st.divider()
+    
+    st.subheader("Excel Connection Test")
+    
+    consumption_sheets,stock_sheets=get_sheet_names()
+    
+    col1,col2=st.columns(2)
+    
+    with col1:
     st.success("Consumption File")
     st.write(consumption_sheets)
-
-with col2:
+    
+    with col2:
     st.success("Stock File")
     st.write(stock_sheets)
