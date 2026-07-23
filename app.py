@@ -173,6 +173,17 @@ if selected=="Executive Dashboard":
     display["Chemical"] = display["Chemical"].astype(str)
     display = display.dropna(subset=["Available Stock"])
 
+        def health(x):
+        if x >= 3:
+            return "🟢 Healthy"
+        elif x >= 1:
+            return "🟡 Reorder Soon"
+        else:
+            return "🔴 Critical"
+    
+    display["Status"] = display["Available Months"].astype(float).apply(health)
+    
+    st.write(display.columns)
     
     fig=px.bar(
         display,
