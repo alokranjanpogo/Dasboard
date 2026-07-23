@@ -1,164 +1,67 @@
-# ==========================================================
-# Chemical Dashboard - Data Loader
-# ==========================================================
-
 import pandas as pd
-import re
+import os
+import glob
 
-stock_file = "chemical_stock.xlsx"
+# =====================================================
+# Folder containing all Excel files
+# =====================================================
 
+DATA_FOLDER = "data"
 
-# ==========================================================
-# Read Complete Workbook
-# ==========================================================
-
-def load_stock():
-    return pd.read_excel(
-        stock_file,
-        sheet_name=None,
-        header=1,
-        engine="openpyxl"
-    )
-
-
-# ==========================================================
-# Check whether sheet name is a date
-# ==========================================================
-
-def is_date_sheet(sheet):
-
-    pattern = r"\d{1,2}[-/]\d{1,2}[-/]\d{2,4}"
-
-    return bool(re.match(pattern, str(sheet)))
-
-
-# ==========================================================
-# Build Master DataFrame
-# ==========================================================
-
-def build_master_stock():
-
-    workbook = load_stock()
-
-    master = []
-
-    for sheet_name, df in workbook.items():
-
-        if not is_date_sheet(sheet_name):
-            continue
-
-        df = df.dropna(how="all")
-
-        if df.empty:
-            continue
-
-        df = df.dropna(subset=[df.columns[0]])
-
-        df = df.reset_index(drop=True)
-
-        df.columns = [
-            "Chemical",
-            "Daily Requirement",
-            "Monthly Requirement",
-            "3 Month Requirement",
-            "Available Stock",
-            "Available Days",
-            "Vendor"
-        ]
-
-        df = df[
-            ~df["Chemical"].astype(str).str.contains(
-                "Group",
-                case=False,
-                na=False
-            )
-        ]
-
-        df = df[
-            ~df["Chemical"].astype(str).str.contains(
-                "Total",
-                case=False,
-                na=False
-            )
-        ]
-
-        df["Date"] = pd.to_datetime(
-            sheet_name,
-            dayfirst=True,
-            errors="coerce"
-        )
-
-        master.append(df)
-
-    master = pd.concat(master, ignore_index=True)
-
-    master["Year"] = master["Date"].dt.year
-
-    master["Month"] = master["Date"].dt.month_name()
-
-    master["Week"] = master["Date"].dt.isocalendar().week
-
-    master["Day"] = master["Date"].dt.day
-
-    return master
-
-
-# ==========================================================
-# Latest Stock
-# ==========================================================
+# =====================================================
+# Read Latest Stock
+# =====================================================
 
 def get_latest_stock():
 
-    master = build_master_stock()
+    files = glob.glob(os.path.join(DATA_FOLDER, "*.xlsx"))
 
-    latest = master["Date"].max()
+    if len(files) == 0:
+        return None, pd.DataFrame()
 
-    latest_df = master[
-        master["Date"] == latest
-    ]
+    latest_file = max(files, key=os.path.getmtime)
 
-    return latest.strftime("%d-%m-%Y"), latest_df
+    date = os.path.basename(latest_file).replace(".xlsx", "")
 
+    df = pd.read_excel(latest_file)
 
-# ==========================================================
-# Available Years
-# ==========================================================
-
-def get_years():
-
-    df = build_master_stock()
-
-    return sorted(df["Year"].dropna().unique())
+    return date, df
 
 
-# ==========================================================
-# Available Months
-# ==========================================================
+# =====================================================
+# Build Master Stock (All Years)
+# =====================================================
 
-def get_months(year):
+def build_master_stock():
 
-    df = build_master_stock()
+    files = glob.glob(os.path.join(DATA_FOLDER, "*.xlsx"))
 
-    df = df[df["Year"] == year]
+    master = []
 
-    return df["Month"].unique()
+    for file in files:
 
+        try:
 
-# ==========================================================
-# Filter Data
-# ==========================================================
+            df = pd.read_excel(file)
 
-def filter_stock(year=None, month=None, week=None):
+            filename = os.path.basename(file).replace(".xlsx", "")
 
-    df = build_master_stock()
+            df["Date"] = pd.to_datetime(filename)
 
-    if year is not None:
-        df = df[df["Year"] == year]
+            df["Year"] = df["Date"].dt.year
 
-    if month is not None:
-        df = df[df["Month"] == month]
+            df["Month"] = df["Date"].dt.month_name()
 
-    if week is not None:
-        df = df[df["Week"] == week]
+            df["Week"] = df["Date"].dt.isocalendar().week
 
-    return df
+            master.append(df)
+
+        except:
+
+            continue
+
+    if len(master) == 0:
+
+        return pd.DataFrame()
+
+    return pd.concat(master, ignore_index=True)
