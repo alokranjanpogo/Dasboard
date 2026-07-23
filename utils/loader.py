@@ -28,4 +28,6 @@ def get_latest_stock():
 
     df = sheets[latest_sheet]
 
+    df = df.dropna(how="all")
+
     return latest_sheet, df
