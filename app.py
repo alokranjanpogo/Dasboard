@@ -227,31 +227,29 @@ else:
         hide_index=True
     )
 
-    # ==============================
-    # Latest Stock Data
-    # ==============================
-
-    st.header("Current Chemical Stock")
-
-    st.dataframe(
-        stock,
-        use_container_width=True,
-        height=500
-    )
-
-    # ==============================
-    # Detected Columns
-    # ==============================
-
-    st.header("Detected Columns")
-
-    st.write(list(stock.columns))
-
+        # ==============================
+        # Latest Stock Data
+        # ==============================
+    
+        st.header("Current Chemical Stock")
+    
+        st.dataframe(
+            stock,
+            use_container_width=True,
+            height=500
+        )
+    
+        # ==============================
+        # Detected Columns
+        # ==============================
+    
+        st.header("Detected Columns")
+    
+        st.write(list(stock.columns))
+    
 elif selected=="Consumption Analysis":
     st.info("Consumption Dashboard Coming in Part 4")    
 
-elif selected=="Consumption Analysis":
-    st.info("Consumption Dashboard Coming in Part 4")
 
 elif selected=="Stock Status":
     st.info("Stock Dashboard Coming in Part 5")
