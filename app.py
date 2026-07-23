@@ -142,22 +142,22 @@ if selected=="Executive Dashboard":
     
     def health(x):
     
-    if x>=3:
-        return "🟢 Healthy"
-    
-    elif x>=1:
-        return "🟡 Reorder Soon"
-    
-    else:
-        return "🔴 Critical"
-    
-    display["Status"]=display["Available Months"].apply(health)
-    
-    st.dataframe(
-    display,
-    use_container_width=True,
-    hide_index=True
-    )
+        if x>=3:
+            return "🟢 Healthy"
+        
+        elif x>=1:
+            return "🟡 Reorder Soon"
+        
+        else:
+            return "🔴 Critical"
+        
+        display["Status"]=display["Available Months"].apply(health)
+        
+        st.dataframe(
+        display,
+        use_container_width=True,
+        hide_index=True
+        )
     
     # ==========================================
     # Stock Availability
