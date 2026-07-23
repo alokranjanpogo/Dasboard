@@ -98,28 +98,28 @@ if selected=="Executive Dashboard":
     c1,c2,c3,c4=st.columns(4)
     
     with c1:
-    st.metric(
-        "🧪 Chemicals",
-        total_chemicals
-    )
+        st.metric(
+            "🧪 Chemicals",
+            total_chemicals
+        )
     
     with c2:
-    st.metric(
-        "📦 Available Stock",
-        f"{available_stock:.2f} Ton"
-    )
-    
+        st.metric(
+            "📦 Available Stock",
+            f"{available_stock:.2f} Ton"
+        )
+        
     with c3:
-    st.metric(
-        "📅 Daily Requirement",
-        f"{daily_requirement:.2f} Ton"
-    )
-    
+        st.metric(
+            "📅 Daily Requirement",
+            f"{daily_requirement:.2f} Ton"
+        )
+        
     with c4:
-    st.metric(
-        "🗓 Monthly Requirement",
-        f"{monthly_requirement:.2f} Ton"
-    )
+        st.metric(
+            "🗓 Monthly Requirement",
+            f"{monthly_requirement:.2f} Ton"
+        )
     
     st.divider()
     
