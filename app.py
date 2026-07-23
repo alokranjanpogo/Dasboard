@@ -634,7 +634,7 @@ if selected == "Executive Dashboard":
 
         )
 
-   elif summary["Warning"] > 0:
+     elif summary["Warning"] > 0:
 
         st.warning(
 
@@ -642,13 +642,13 @@ if selected == "Executive Dashboard":
 
         )
 
-    else: 
-
-        st.success(
-
-            "Inventory is healthy. No immediate procurement required."
-
-        )
+     else: 
+    
+            st.success(
+    
+                "Inventory is healthy. No immediate procurement required."
+    
+            )
 
     # ==========================================================
     # CONSUMPTION ANALYSIS
