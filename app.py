@@ -215,18 +215,18 @@ def health(x):
     
     if len(critical)==0:
     
-    st.success("✅ No Critical Chemical")
+        st.success("✅ No Critical Chemical")
     
     else:
     
-    st.error("Immediate Procurement Required")
-    
-    st.dataframe(
-        critical,
-        use_container_width=True,
-        hide_index=True
-    )
-    
+        st.error("Immediate Procurement Required")
+        
+        st.dataframe(
+            critical,
+            use_container_width=True,
+            hide_index=True
+        )
+        
         # ==============================
         # Latest Stock Data
         # ==============================
