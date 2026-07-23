@@ -50,6 +50,7 @@ MONTHS = [
 ]
 
 
+
 # ==========================================================
 # READ WORKBOOK
 # ==========================================================
@@ -59,20 +60,23 @@ def read_workbook(file):
     try:
 
         workbook = pd.read_excel(
-
             file,
-
             sheet_name=None,
-
+            header=1, # Second row contains headers
             engine="openpyxl"
-
         )
 
         return workbook
 
-    except:
+    except Exception as e:
+
+        print(e)
 
         return {}
+
+# ==========================================================
+# BUILD MASTER DATAFRAME
+# ==========================================================
 
 # ==========================================================
 # BUILD MASTER DATAFRAME
@@ -84,24 +88,17 @@ def build_master_stock():
 
     master = []
 
-    if len(files) == 0:
-
+    if not files:
         return pd.DataFrame()
 
     for file in files:
 
         workbook = read_workbook(file)
 
-        if len(workbook) == 0:
-            continue
-
-        # Year from filename
-        year = os.path.basename(file).replace(".xlsx", "")
-
         for sheet_name, df in workbook.items():
 
-            # Ignore non-month sheets
-            if sheet_name not in MONTHS:
+            # Ignore unwanted sheets
+            if str(sheet_name).lower() in ["sheet1", "sheet2"]:
                 continue
 
             if df.empty:
@@ -113,90 +110,24 @@ def build_master_stock():
             if df.empty:
                 continue
 
-            # Remove blank chemicals
-            df = df.dropna(subset=[df.columns[0]])
-
-            # Reset index
-            df.reset_index(
-                drop=True,
-                inplace=True
-            )
-
-            # Keep only first 8 columns
+            # Keep first 8 columns only
             df = df.iloc[:, :8]
 
             df.columns = [
-
                 "Date",
-
                 "Chemical",
-
                 "Daily Requirement",
-
                 "Monthly Requirement",
-
                 "3 Month Requirement",
-
                 "Available Stock",
-
                 "Available Days",
-
                 "Vendor"
-
             ]
 
-            # Convert Date
+            # Remove blank chemicals
+            df = df.dropna(subset=["Chemical"])
 
-            df["Date"] = pd.to_datetime(
-
-                df["Date"],
-
-                dayfirst=True,
-
-                errors="coerce"
-
-            )
-
-            df = df.dropna(subset=["Date"])
-
-            # Add Calendar Information
-
-            df["Year"] = int(year)
-
-            df["Month"] = sheet_name
-
-            df["Week"] = df["Date"].dt.isocalendar().week
-
-            df["Day"] = df["Date"].dt.day
-
-            # Numeric Columns
-
-            numeric = [
-
-                "Daily Requirement",
-
-                "Monthly Requirement",
-
-                "3 Month Requirement",
-
-                "Available Stock",
-
-                "Available Days"
-
-            ]
-
-            for col in numeric:
-
-                df[col] = pd.to_numeric(
-
-                    df[col],
-
-                    errors="coerce"
-
-                )
-
-            # Remove group rows
-
+            # Remove Group rows
             df = df[
                 ~df["Chemical"].astype(str).str.contains(
                     "Group",
@@ -205,8 +136,7 @@ def build_master_stock():
                 )
             ]
 
-            # Remove total rows
-
+            # Remove Total rows
             df = df[
                 ~df["Chemical"].astype(str).str.contains(
                     "Total",
@@ -215,10 +145,40 @@ def build_master_stock():
                 )
             ]
 
+            # Date comes from SHEET NAME
+            sheet_date = pd.to_datetime(
+                sheet_name,
+                dayfirst=True,
+                errors="coerce"
+            )
+
+            if pd.isna(sheet_date):
+                continue
+
+            df["Date"] = sheet_date
+
+            df["Year"] = sheet_date.year
+            df["Month"] = sheet_date.strftime("%B")
+            df["Week"] = int(sheet_date.isocalendar().week)
+            df["Day"] = sheet_date.day
+
+            numeric = [
+                "Daily Requirement",
+                "Monthly Requirement",
+                "3 Month Requirement",
+                "Available Stock",
+                "Available Days"
+            ]
+
+            for col in numeric:
+                df[col] = pd.to_numeric(
+                    df[col],
+                    errors="coerce"
+                )
+
             master.append(df)
 
-    if len(master) == 0:
-
+    if not master:
         return pd.DataFrame()
 
     master = pd.concat(
@@ -226,9 +186,7 @@ def build_master_stock():
         ignore_index=True
     )
 
-    master = master.sort_values(
-        "Date"
-    )
+    master = master.sort_values("Date")
 
     master.reset_index(
         drop=True,
