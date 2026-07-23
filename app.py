@@ -132,32 +132,32 @@ if selected=="Executive Dashboard":
     display = stock.copy()
     
     display.columns=[
-    "Chemical",
-    "Daily Requirement",
-    "Monthly Requirement",
-    "3 Month Requirement",
-    "Available Stock",
-    "Available Months"
+        "Chemical",
+        "Daily Requirement",
+        "Monthly Requirement",
+        "3 Month Requirement",
+        "Available Stock",
+        "Available Months"
     ]
     
-def health(x):
-
-    if x>=3:
-        return "🟢 Healthy"
-    
-    elif x>=1:
-        return "🟡 Reorder Soon"
-    
-    else:
-        return "🔴 Critical"
+        def health(x):
         
-    display["Status"]=display["Available Months"].apply(health)
-    
-    st.dataframe(
-    display,
-    use_container_width=True,
-    hide_index=True
-    )
+            if x>=3:
+                return "🟢 Healthy"
+            
+            elif x>=1:
+                return "🟡 Reorder Soon"
+            
+            else:
+                return "🔴 Critical"
+                
+            display["Status"]=display["Available Months"].apply(health)
+            
+            st.dataframe(
+            display,
+            use_container_width=True,
+            hide_index=True
+            )
 
     # ==========================================
     # Stock Availability
@@ -263,5 +263,5 @@ elif selected=="Forecast":
 elif selected=="Reports":
     st.info("Reports Dashboard Coming in Part 8")
 
-from utils.loader import *
+
 
