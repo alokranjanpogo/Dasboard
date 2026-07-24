@@ -350,44 +350,75 @@ elif page == "Consumption Analysis":
 
     st.header("📈 Consumption Analysis")
 
-    c1, c2, c3 = st.columns(3)
+    selected_chemical_ca = st.selectbox(
+        "🧪 Select Chemical",
+        sorted(cons["Chemical"].unique()),
+        key="consumption_chemical"
+    )
+
+    chem_df = cons[
+        cons["Chemical"] == selected_chemical_ca
+    ]
+
+    if chem_df.empty:
+        st.warning("No data available.")
+        st.stop()
+
+    latest = (
+        chem_df
+        .sort_values("Date")
+        .iloc[-1]
+    )
+
+    # ====================================
+    # KPI SECTION
+    # ====================================
+
+    c1, c2, c3, c4 = st.columns(4)
 
     with c1:
         st.metric(
-            "Total Consumption",
-            f"{cons['Consumption'].sum():,.2f} Ton"
+            "Chemical",
+            selected_chemical_ca
         )
 
     with c2:
         st.metric(
-            "Average Consumption",
-            f"{cons['Consumption'].mean():,.2f} Ton"
+            "Total Consumption",
+            f"{chem_df['Consumption'].sum():.2f} Ton"
         )
 
     with c3:
         st.metric(
-            "Maximum Consumption",
-            f"{cons['Consumption'].max():,.2f} Ton"
+            "Average Consumption",
+            f"{chem_df['Consumption'].mean():.2f} Ton"
         )
 
-    st.subheader("Daily Consumption Trend")
+    with c4:
+        st.metric(
+            "Maximum Consumption",
+            f"{chem_df['Consumption'].max():.2f} Ton"
+        )
 
-    daily = (
-        cons.groupby(
-            "Date",
-            as_index=False
-        )["Consumption"]
-        .sum()
+    st.divider()
+
+    # ====================================
+    # DAILY CONSUMPTION
+    # ====================================
+
+    st.subheader(
+        f"📊 Daily Consumption Trend : {selected_chemical_ca}"
     )
 
     fig = px.line(
-        daily,
+        chem_df,
         x="Date",
         y="Consumption",
         markers=True
     )
 
     fig.update_layout(
+        template="plotly_white",
         yaxis_title="Consumption (Ton)"
     )
 
@@ -396,22 +427,24 @@ elif page == "Consumption Analysis":
         use_container_width=True
     )
 
-    st.subheader("Chemical-wise Consumption")
+    # ====================================
+    # STOCK TREND
+    # ====================================
 
-    chem = (
-        cons.groupby(
-            "Chemical",
-            as_index=False
-        )["Consumption"]
-        .sum()
+    st.subheader(
+        f"📦 Stock Trend : {selected_chemical_ca}"
     )
 
-    fig = px.bar(
-        chem,
-        x="Chemical",
-        y="Consumption",
-        text="Consumption",
-        color="Chemical"
+    fig = px.line(
+        chem_df,
+        x="Date",
+        y="Available Stock",
+        markers=True
+    )
+
+    fig.update_layout(
+        template="plotly_white",
+        yaxis_title="Available Stock (Ton)"
     )
 
     st.plotly_chart(
@@ -419,6 +452,124 @@ elif page == "Consumption Analysis":
         use_container_width=True
     )
 
+    # ====================================
+    # WEEKLY CONSUMPTION
+    # ====================================
+
+    st.subheader(
+        "📅 Weekly Consumption"
+    )
+
+    weekly = (
+        chem_df
+        .groupby(
+            "Week",
+            as_index=False
+        )["Consumption"]
+        .sum()
+    )
+
+    fig = px.bar(
+        weekly,
+        x="Week",
+        y="Consumption",
+        text="Consumption"
+    )
+
+    fig.update_layout(
+        template="plotly_white",
+        yaxis_title="Consumption (Ton)"
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    # ====================================
+    # MONTHLY CONSUMPTION
+    # ====================================
+
+    st.subheader(
+        "📆 Monthly Consumption"
+    )
+
+    monthly = (
+        chem_df
+        .groupby(
+            "Month",
+            as_index=False
+        )["Consumption"]
+        .sum()
+    )
+
+    fig = px.bar(
+        monthly,
+        x="Month",
+        y="Consumption",
+        text="Consumption"
+    )
+
+    fig.update_layout(
+        template="plotly_white",
+        yaxis_title="Consumption (Ton)"
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    # ====================================
+    # YEARLY CONSUMPTION
+    # ====================================
+
+    st.subheader(
+        "📈 Yearly Consumption"
+    )
+
+    yearly = (
+        chem_df
+        .groupby(
+            "Year",
+            as_index=False
+        )["Consumption"]
+        .sum()
+    )
+
+    fig = px.line(
+        yearly,
+        x="Year",
+        y="Consumption",
+        markers=True
+    )
+
+    fig.update_layout(
+        template="plotly_white",
+        yaxis_title="Consumption (Ton)"
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    # ====================================
+    # DETAILS TABLE
+    # ====================================
+
+    st.subheader(
+        "📋 Consumption Details"
+    )
+
+    st.dataframe(
+        chem_df.sort_values(
+            "Date",
+            ascending=False
+        ),
+        use_container_width=True,
+        hide_index=True
+    )
 # ==================================================
 # INVENTORY HEALTH
 # ==================================================
