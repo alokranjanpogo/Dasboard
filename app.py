@@ -1,11 +1,5 @@
 import streamlit as st
 import pandas as pd
-import pandas as pd
-
-x = pd.ExcelFile("data/2026_normalized.xlsx")
-
-st.write("Sheets Found:")
-st.write(x.sheet_names)
 import plotly.express as px
 
 from utils.loader import (
