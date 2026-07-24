@@ -574,20 +574,100 @@ elif page == "Consumption Analysis":
 # INVENTORY HEALTH
 # ==================================================
 
+# ==================================================
+# INVENTORY HEALTH
+# ==================================================
+
 elif page == "Inventory Health":
 
-    st.header("📦 Inventory Health")
+    st.header("📦 Inventory Health Dashboard")
+
+    # =====================================
+    # LATEST RECORD OF EACH CHEMICAL
+    # =====================================
+
+    latest_inventory = (
+        display
+        .sort_values("Date")
+        .groupby("Chemical")
+        .tail(1)
+        .copy()
+    )
+
+    # =====================================
+    # KPI CARDS
+    # =====================================
+
+    critical = len(
+        latest_inventory[
+            latest_inventory["Status"] == "Critical"
+        ]
+    )
+
+    warning = len(
+        latest_inventory[
+            latest_inventory["Status"] == "Warning"
+        ]
+    )
+
+    healthy = len(
+        latest_inventory[
+            latest_inventory["Status"] == "Healthy"
+        ]
+    )
+
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+        st.error(
+            f"🔴 Critical Chemicals : {critical}"
+        )
+
+    with c2:
+        st.warning(
+            f"🟡 Warning Chemicals : {warning}"
+        )
+
+    with c3:
+        st.success(
+            f"🟢 Healthy Chemicals : {healthy}"
+        )
+
+    st.divider()
+
+    # =====================================
+    # AVAILABLE DAYS
+    # =====================================
+
+    st.subheader(
+        "📅 Available Days by Chemical"
+    )
 
     fig = px.bar(
-        display,
+        latest_inventory,
         x="Chemical",
         y="Available Days",
         color="Status",
-        text="Available Days"
+        text=latest_inventory[
+            "Available Days"
+        ].round(1),
+        color_discrete_map={
+            "Healthy": "green",
+            "Warning": "orange",
+            "Critical": "red"
+        },
+        height=600
+    )
+
+    fig.update_traces(
+        textposition="outside"
     )
 
     fig.update_layout(
-        yaxis_title="Available Days"
+        template="plotly_white",
+        xaxis_title="Chemical",
+        yaxis_title="Available Days",
+        showlegend=True
     )
 
     st.plotly_chart(
@@ -595,76 +675,160 @@ elif page == "Inventory Health":
         use_container_width=True
     )
 
-    critical_df = display[
-        display["Status"] == "Critical"
-    ]
+    st.divider()
 
-    if not critical_df.empty:
+    # =====================================
+    # AVAILABLE STOCK
+    # =====================================
 
-        st.error(
-            f"{len(critical_df)} Critical Chemicals Found"
-        )
-
-        st.dataframe(
-            critical_df,
-            use_container_width=True
-        )
-
-    st.dataframe(
-        display,
-        use_container_width=True
-    )
-
-# ==================================================
-# PROCUREMENT
-# ==================================================
-
-elif page == "Procurement Planning":
-
-    st.header("🚚 Procurement Planning")
-
-    latest_date = display["Date"].max()
-
-    latest = display[
-        display["Date"] == latest_date
-    ].copy()
-
-    latest["Required Qty"] = (
-        latest["3 Month Requirement"]
-        - latest["Available Stock"]
-    )
-
-    latest["Required Qty"] = (
-        latest["Required Qty"]
-        .clip(lower=0)
-    )
-
-    st.dataframe(
-        latest[
-            [
-                "Chemical",
-                "Vendor",
-                "Available Stock",
-                "3 Month Requirement",
-                "Required Qty"
-            ]
-        ],
-        use_container_width=True
+    st.subheader(
+        "📦 Available Stock by Chemical"
     )
 
     fig = px.bar(
-        latest,
+        latest_inventory,
         x="Chemical",
-        y="Required Qty",
-        text="Required Qty",
-        color="Vendor"
+        y="Available Stock",
+        color="Status",
+        text=latest_inventory[
+            "Available Stock"
+        ].round(2),
+        color_discrete_map={
+            "Healthy": "green",
+            "Warning": "orange",
+            "Critical": "red"
+        },
+        height=600
+    )
+
+    fig.update_traces(
+        textposition="outside"
     )
 
     fig.update_layout(
-        yaxis_title="Quantity Required (Ton)"
+        template="plotly_white",
+        xaxis_title="Chemical",
+        yaxis_title="Available Stock (Ton)"
     )
 
     st.plotly_chart(
         fig,
         use_container_width=True
+    )
+
+    st.divider()
+
+    # =====================================
+    # STATUS DONUT
+    # =====================================
+
+    st.subheader(
+        "🟢 Inventory Status Distribution"
+    )
+
+    health = (
+        latest_inventory
+        .groupby(
+            "Status",
+            as_index=False
+        )
+        .size()
+    )
+
+    fig = px.pie(
+        health,
+        names="Status",
+        values="size",
+        hole=0.60,
+        color="Status",
+        color_discrete_map={
+            "Healthy": "green",
+            "Warning": "orange",
+            "Critical": "red"
+        }
+    )
+
+    fig.update_layout(
+        template="plotly_white",
+        height=500
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    st.divider()
+
+    # =====================================
+    # CRITICAL CHEMICALS
+    # =====================================
+
+    st.subheader(
+        "🚨 Critical Chemical Alert"
+    )
+
+    critical_df = latest_inventory[
+        latest_inventory["Status"] == "Critical"
+    ]
+
+    if critical_df.empty:
+
+        st.success(
+            "✅ No Critical Chemicals Found"
+        )
+
+    else:
+
+        st.error(
+            f"{len(critical_df)} Critical Chemicals Require Immediate Attention"
+        )
+
+        st.dataframe(
+            critical_df[
+                [
+                    "Chemical",
+                    "Available Stock",
+                    "Available Days",
+                    "Vendor"
+                ]
+            ],
+            use_container_width=True,
+            hide_index=True
+        )
+
+    st.divider()
+
+    # =====================================
+    # INVENTORY TABLE
+    # =====================================
+
+    st.subheader(
+        "📋 Current Inventory Status"
+    )
+
+    st.dataframe(
+        latest_inventory.sort_values(
+            "Available Days"
+        ),
+        use_container_width=True,
+        hide_index=True,
+        height=450
+    )
+
+    st.divider()
+
+    # =====================================
+    # DOWNLOAD REPORT
+    # =====================================
+
+    csv = latest_inventory.to_csv(
+        index=False
+    ).encode("utf-8")
+
+    st.download_button(
+        "📥 Download Inventory Report",
+        csv,
+        file_name="Inventory_Health_Report.csv",
+        mime="text/csv"
     )
