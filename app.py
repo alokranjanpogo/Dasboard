@@ -166,7 +166,7 @@ selected = option_menu(
 # EXECUTIVE DASHBOARD
 # ==========================================================
 
-if selected == "Executive Dashboard":
+    if selected == "Executive Dashboard":
 
         st.header("📊 Executive Dashboard")
     
