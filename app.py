@@ -8,9 +8,9 @@ from utils.loader import (
     stock_health
 )
 
-# ==========================================
+# ==================================================
 # PAGE CONFIG
-# ==========================================
+# ==================================================
 
 st.set_page_config(
     page_title="Chemical Dashboard",
@@ -18,42 +18,35 @@ st.set_page_config(
     layout="wide"
 )
 
-# ==========================================
+# ==================================================
 # LOAD DATA
-# ==========================================
+# ==================================================
 
 master = build_master_stock()
-master = build_master_stock()
 
-st.write(master.head())
-st.write(master.columns)
 if master.empty:
-    st.error(
-        "No data found in data folder."
-    )
+    st.error("No Excel data found.")
     st.stop()
 
 consumption = calculate_consumption()
 
-# ==========================================
+master["Date"] = pd.to_datetime(master["Date"])
+consumption["Date"] = pd.to_datetime(consumption["Date"])
+
+# ==================================================
 # TITLE
-# ==========================================
+# ==================================================
 
-st.title(
-    "🧪 Chemical Consumption & Stock Dashboard"
-)
+st.title("🧪 Chemical Stock & Consumption Dashboard")
 
-# ==========================================
-# FILTERS
-# ==========================================
+# ==================================================
+# SIDEBAR FILTERS
+# ==================================================
 
 st.sidebar.header("Filters")
 
 years = ["All"] + sorted(
-    master["Year"]
-    .dropna()
-    .unique()
-    .tolist()
+    master["Year"].unique().tolist()
 )
 
 selected_year = st.sidebar.selectbox(
@@ -61,23 +54,8 @@ selected_year = st.sidebar.selectbox(
     years
 )
 
-months = ["All"] + sorted(
-    master["Month"]
-    .dropna()
-    .unique()
-    .tolist()
-)
-
-selected_month = st.sidebar.selectbox(
-    "Month",
-    months
-)
-
 chemicals = ["All"] + sorted(
-    master["Chemical"]
-    .dropna()
-    .unique()
-    .tolist()
+    master["Chemical"].unique().tolist()
 )
 
 selected_chemical = st.sidebar.selectbox(
@@ -85,9 +63,21 @@ selected_chemical = st.sidebar.selectbox(
     chemicals
 )
 
-# ==========================================
+st.sidebar.subheader("Date Range")
+
+start_date = st.sidebar.date_input(
+    "Start Date",
+    value=master["Date"].min()
+)
+
+end_date = st.sidebar.date_input(
+    "End Date",
+    value=master["Date"].max()
+)
+
+# ==================================================
 # FILTER DATA
-# ==========================================
+# ==================================================
 
 inventory = master.copy()
 
@@ -96,168 +86,196 @@ if selected_year != "All":
         inventory["Year"] == selected_year
     ]
 
-if selected_month != "All":
-    inventory = inventory[
-        inventory["Month"] == selected_month
-    ]
-
 if selected_chemical != "All":
     inventory = inventory[
         inventory["Chemical"]
         == selected_chemical
     ]
 
+inventory = inventory[
+    (inventory["Date"] >= pd.to_datetime(start_date))
+    &
+    (inventory["Date"] <= pd.to_datetime(end_date))
+]
+
 display = stock_health(
     inventory.copy()
 )
 
-# ==========================================
+cons = consumption.copy()
+
+if selected_year != "All":
+    cons = cons[
+        cons["Year"] == selected_year
+    ]
+
+if selected_chemical != "All":
+    cons = cons[
+        cons["Chemical"]
+        == selected_chemical
+    ]
+
+cons = cons[
+    (cons["Date"] >= pd.to_datetime(start_date))
+    &
+    (cons["Date"] <= pd.to_datetime(end_date))
+]
+
+# ==================================================
 # MENU
-# ==========================================
+# ==================================================
 
 page = st.sidebar.radio(
     "Dashboard",
     [
         "Executive Dashboard",
         "Consumption Analysis",
-        "Stock Status",
+        "Inventory Health",
         "Procurement Planning"
     ]
 )
 
-# ==========================================
+# ==================================================
 # EXECUTIVE DASHBOARD
-# ==========================================
+# ==================================================
 
 if page == "Executive Dashboard":
 
-    st.header(
-        "📊 Executive Dashboard"
+    st.header("📊 Executive Dashboard")
+
+    healthy = len(
+        display[display["Status"] == "Healthy"]
     )
 
-    c1, c2, c3, c4 = st.columns(4)
+    warning = len(
+        display[display["Status"] == "Warning"]
+    )
+
+    critical = len(
+        display[display["Status"] == "Critical"]
+    )
+
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
 
     with c1:
         st.metric(
             "Chemicals",
-            display["Chemical"].nunique()
+            f"{display['Chemical'].nunique()} Nos"
         )
 
     with c2:
         st.metric(
             "Stock",
-            round(
-                display["Available Stock"]
-                .sum(),
-                2
-            )
+            f"{display['Available Stock'].sum():,.2f} Ton"
         )
 
     with c3:
         st.metric(
-            "Average Days",
-            round(
-                display["Available Days"]
-                .mean(),
-                1
-            )
+            "Consumption",
+            f"{cons['Consumption'].sum():,.2f} Ton"
         )
 
     with c4:
         st.metric(
-            "Vendors",
-            display["Vendor"]
-            .nunique()
+            "Coverage",
+            f"{display['Available Days'].mean():.1f} Days"
+        )
+
+    with c5:
+        st.metric(
+            "Critical",
+            f"{critical} Nos"
+        )
+
+    with c6:
+        st.metric(
+            "Healthy",
+            f"{healthy} Nos"
         )
 
     st.divider()
 
-    health = (
-        display
-        .groupby(
-            "Status",
-            as_index=False
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        health = (
+            display
+            .groupby(
+                "Status",
+                as_index=False
+            )
+            .size()
         )
-        .size()
-    )
 
-    fig = px.pie(
-        health,
-        names="Status",
-        values="size",
-        hole=.5
-    )
+        fig = px.pie(
+            health,
+            names="Status",
+            values="size",
+            hole=.55
+        )
 
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
 
-# ==========================================
-# CONSUMPTION
-# ==========================================
+    with col2:
+
+        stock = (
+            display
+            .groupby(
+                "Chemical",
+                as_index=False
+            )["Available Stock"]
+            .sum()
+        )
+
+        fig = px.bar(
+            stock,
+            x="Chemical",
+            y="Available Stock",
+            text="Available Stock"
+        )
+
+        fig.update_layout(
+            yaxis_title="Stock (Ton)"
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
+
+# ==================================================
+# CONSUMPTION ANALYSIS
+# ==================================================
 
 elif page == "Consumption Analysis":
 
-    st.header(
-        "📈 Consumption Analysis"
-    )
-
-    cons = consumption.copy()
-
-    if selected_year != "All":
-        cons = cons[
-            cons["Year"]
-            == selected_year
-        ]
-
-    if selected_month != "All":
-        cons = cons[
-            cons["Month"]
-            == selected_month
-        ]
-
-    if selected_chemical != "All":
-        cons = cons[
-            cons["Chemical"]
-            == selected_chemical
-        ]
+    st.header("📈 Consumption Analysis")
 
     c1, c2, c3 = st.columns(3)
 
     with c1:
         st.metric(
             "Total Consumption",
-            round(
-                cons["Consumption"]
-                .sum(),
-                2
-            )
+            f"{cons['Consumption'].sum():,.2f} Ton"
         )
 
     with c2:
         st.metric(
-            "Average",
-            round(
-                cons["Consumption"]
-                .mean(),
-                2
-            )
+            "Average Consumption",
+            f"{cons['Consumption'].mean():,.2f} Ton"
         )
 
     with c3:
         st.metric(
-            "Maximum",
-            round(
-                cons["Consumption"]
-                .max(),
-                2
-            )
+            "Maximum Consumption",
+            f"{cons['Consumption'].max():,.2f} Ton"
         )
 
-    st.subheader(
-        "Daily Trend"
-    )
+    st.subheader("Daily Consumption Trend")
 
     daily = (
         cons.groupby(
@@ -274,16 +292,18 @@ elif page == "Consumption Analysis":
         markers=True
     )
 
+    fig.update_layout(
+        yaxis_title="Consumption (Ton)"
+    )
+
     st.plotly_chart(
         fig,
         use_container_width=True
     )
 
-    st.subheader(
-        "Chemical Consumption"
-    )
+    st.subheader("Chemical-wise Consumption")
 
-    chemical = (
+    chem = (
         cons.groupby(
             "Chemical",
             as_index=False
@@ -292,11 +312,11 @@ elif page == "Consumption Analysis":
     )
 
     fig = px.bar(
-        chemical,
+        chem,
         x="Chemical",
         y="Consumption",
-        color="Chemical",
-        text="Consumption"
+        text="Consumption",
+        color="Chemical"
     )
 
     st.plotly_chart(
@@ -304,15 +324,13 @@ elif page == "Consumption Analysis":
         use_container_width=True
     )
 
-# ==========================================
-# STOCK STATUS
-# ==========================================
+# ==================================================
+# INVENTORY HEALTH
+# ==================================================
 
-elif page == "Stock Status":
+elif page == "Inventory Health":
 
-    st.header(
-        "📦 Stock Status"
-    )
+    st.header("📦 Inventory Health")
 
     fig = px.bar(
         display,
@@ -322,33 +340,47 @@ elif page == "Stock Status":
         text="Available Days"
     )
 
+    fig.update_layout(
+        yaxis_title="Available Days"
+    )
+
     st.plotly_chart(
         fig,
         use_container_width=True
     )
+
+    critical_df = display[
+        display["Status"] == "Critical"
+    ]
+
+    if not critical_df.empty:
+
+        st.error(
+            f"{len(critical_df)} Critical Chemicals Found"
+        )
+
+        st.dataframe(
+            critical_df,
+            use_container_width=True
+        )
 
     st.dataframe(
         display,
         use_container_width=True
     )
 
-# ==========================================
+# ==================================================
 # PROCUREMENT
-# ==========================================
+# ==================================================
 
 elif page == "Procurement Planning":
 
-    st.header(
-        "🚚 Procurement Planning"
-    )
+    st.header("🚚 Procurement Planning")
 
-    latest_date = display[
-        "Date"
-    ].max()
+    latest_date = display["Date"].max()
 
     latest = display[
-        display["Date"]
-        == latest_date
+        display["Date"] == latest_date
     ].copy()
 
     latest["Required Qty"] = (
@@ -378,7 +410,12 @@ elif page == "Procurement Planning":
         latest,
         x="Chemical",
         y="Required Qty",
-        text="Required Qty"
+        text="Required Qty",
+        color="Vendor"
+    )
+
+    fig.update_layout(
+        yaxis_title="Quantity Required (Ton)"
     )
 
     st.plotly_chart(
