@@ -13,14 +13,9 @@ def build_master_stock():
 
     for file in files:
 
-        xl = pd.ExcelFile(file)
-
-        # Read first sheet automatically
-        first_sheet = xl.sheet_names[0]
-
         df = pd.read_excel(
             file,
-            sheet_name=first_sheet,
+            sheet_name="MasterData",
             engine="openpyxl"
         )
 
@@ -31,6 +26,10 @@ def build_master_stock():
         ignore_index=True
     )
 
+    master["Date"] = pd.to_datetime(
+        master["Date"]
+    )
+
     return master
 
 
@@ -39,9 +38,7 @@ def calculate_consumption():
     df = build_master_stock()
 
     if df.empty:
-        return df
-
-    df["Date"] = pd.to_datetime(df["Date"])
+        return pd.DataFrame()
 
     df = df.sort_values(
         ["Chemical", "Date"]
@@ -67,7 +64,7 @@ def stock_health(df):
 
     df = df.copy()
 
-    def status(days):
+    def get_status(days):
 
         if days >= 90:
             return "Healthy"
@@ -75,10 +72,11 @@ def stock_health(df):
         elif days >= 30:
             return "Warning"
 
-        return "Critical"
+        else:
+            return "Critical"
 
-    df["Status"] = df["Available Days"].apply(
-        status
-    )
+    df["Status"] = df[
+        "Available Days"
+    ].apply(get_status)
 
     return df
