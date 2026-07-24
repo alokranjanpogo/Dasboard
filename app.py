@@ -836,6 +836,10 @@ elif page == "Inventory Health":
 # PROCUREMENT PLANNING
 # ==================================================
 
+# ==================================================
+# PROCUREMENT PLANNING
+# ==================================================
+
 elif page == "Procurement Planning":
 
     st.header("🚚 Procurement Planning Dashboard")
@@ -1010,4 +1014,111 @@ elif page == "Procurement Planning":
         comparison,
         x="Chemical",
         y=[
-            
+            "Available Stock",
+            "3 Month Requirement"
+        ],
+        barmode="group",
+        height=600
+    )
+
+    fig.update_layout(
+        template="plotly_white",
+        yaxis_title="Quantity (Ton)"
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    st.divider()
+
+    # =====================================
+    # VENDOR-WISE PROCUREMENT
+    # =====================================
+
+    st.subheader(
+        "🏭 Vendor Wise Procurement"
+    )
+
+    vendor_summary = (
+        procurement_df
+        .groupby(
+            "Vendor",
+            as_index=False
+        )["Required Qty"]
+        .sum()
+    )
+
+    if not vendor_summary.empty:
+
+        fig = px.pie(
+            vendor_summary,
+            names="Vendor",
+            values="Required Qty",
+            hole=0.55
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
+
+    st.divider()
+
+    # =====================================
+    # REORDER PRIORITY
+    # =====================================
+
+    st.subheader(
+        "🎯 Reorder Priority"
+    )
+
+    priority_df = latest.copy()
+
+    priority_df["Priority"] = (
+        priority_df["Available Days"]
+        .apply(
+            lambda x:
+            "High"
+            if x < 15
+            else (
+                "Medium"
+                if x < 45
+                else "Low"
+            )
+        )
+    )
+
+    st.dataframe(
+        priority_df[
+            [
+                "Chemical",
+                "Available Days",
+                "Vendor",
+                "Priority"
+            ]
+        ]
+        .sort_values(
+            "Available Days"
+        ),
+        hide_index=True,
+        use_container_width=True
+    )
+
+    st.divider()
+
+    # =====================================
+    # DOWNLOAD REPORT
+    # =====================================
+
+    csv = priority_df.to_csv(
+        index=False
+    ).encode("utf-8")
+
+    st.download_button(
+        "📥 Download Procurement Report",
+        csv,
+        file_name="Procurement_Report.csv",
+        mime="text/csv"
+    )
