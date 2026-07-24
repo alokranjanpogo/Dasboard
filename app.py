@@ -143,109 +143,204 @@ if page == "Executive Dashboard":
 
     st.header("📊 Executive Dashboard")
 
-    healthy = len(
-        display[display["Status"] == "Healthy"]
+    selected_exec_chemical = st.selectbox(
+        "🧪 Select Chemical",
+        sorted(display["Chemical"].unique())
     )
 
-    warning = len(
-        display[display["Status"] == "Warning"]
+    chemical_df = display[
+        display["Chemical"] == selected_exec_chemical
+    ]
+
+    latest_row = (
+        chemical_df
+        .sort_values("Date")
+        .iloc[-1]
     )
 
-    critical = len(
-        display[display["Status"] == "Critical"]
-    )
+    st.markdown("---")
 
-    c1, c2, c3, c4, c5, c6 = st.columns(6)
+    c1, c2, c3, c4, c5 = st.columns(5)
 
     with c1:
         st.metric(
-            "Chemicals",
-            f"{display['Chemical'].nunique()} Nos"
+            "🧪 Chemical",
+            latest_row["Chemical"]
         )
 
     with c2:
         st.metric(
-            "Stock",
-            f"{display['Available Stock'].sum():,.2f} Ton"
+            "📦 Stock",
+            f"{latest_row['Available Stock']:.2f} Ton"
         )
 
     with c3:
         st.metric(
-            "Consumption",
-            f"{cons['Consumption'].sum():,.2f} Ton"
+            "📅 Available Days",
+            f"{latest_row['Available Days']:.1f} Days"
         )
 
     with c4:
         st.metric(
-            "Coverage",
-            f"{display['Available Days'].mean():.1f} Days"
+            "⚙️ Daily Requirement",
+            f"{latest_row['Daily Requirement']:.2f} Ton"
         )
 
     with c5:
         st.metric(
-            "Critical",
-            f"{critical} Nos"
+            "🏭 Vendor",
+            latest_row["Vendor"]
         )
 
-    with c6:
+    st.markdown("---")
+
+    status = latest_row["Status"]
+
+    if status == "Healthy":
+        st.success(
+            "✅ Inventory Status : HEALTHY"
+        )
+
+    elif status == "Warning":
+        st.warning(
+            "⚠️ Inventory Status : WARNING"
+        )
+
+    else:
+        st.error(
+            "🚨 Inventory Status : CRITICAL"
+        )
+
+    # =====================================
+    # STOCK TREND
+    # =====================================
+
+    st.subheader(
+        f"📈 Stock Trend : {selected_exec_chemical}"
+    )
+
+    history = master[
+        master["Chemical"]
+        == selected_exec_chemical
+    ].copy()
+
+    fig = px.line(
+        history,
+        x="Date",
+        y="Available Stock",
+        markers=True
+    )
+
+    fig.update_layout(
+        template="plotly_white",
+        yaxis_title="Available Stock (Ton)",
+        xaxis_title="Date"
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    # =====================================
+    # CONSUMPTION TREND
+    # =====================================
+
+    st.subheader(
+        f"📉 Consumption Trend : {selected_exec_chemical}"
+    )
+
+    chem_consumption = cons[
+        cons["Chemical"]
+        == selected_exec_chemical
+    ]
+
+    fig = px.bar(
+        chem_consumption,
+        x="Date",
+        y="Consumption",
+        color="Consumption",
+        text="Consumption"
+    )
+
+    fig.update_layout(
+        template="plotly_white",
+        yaxis_title="Consumption (Ton)"
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    # =====================================
+    # PROCUREMENT STATUS
+    # =====================================
+
+    required_qty = max(
+        latest_row["3 Month Requirement"]
+        - latest_row["Available Stock"],
+        0
+    )
+
+    st.subheader(
+        "🚚 Procurement Recommendation"
+    )
+
+    p1, p2, p3 = st.columns(3)
+
+    with p1:
         st.metric(
-            "Healthy",
-            f"{healthy} Nos"
+            "3 Month Requirement",
+            f"{latest_row['3 Month Requirement']:.2f} Ton"
         )
 
-    st.divider()
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-
-        health = (
-            display
-            .groupby(
-                "Status",
-                as_index=False
-            )
-            .size()
+    with p2:
+        st.metric(
+            "Current Stock",
+            f"{latest_row['Available Stock']:.2f} Ton"
         )
 
-        fig = px.pie(
-            health,
-            names="Status",
-            values="size",
-            hole=.55
+    with p3:
+        st.metric(
+            "Required Qty",
+            f"{required_qty:.2f} Ton"
         )
 
-        st.plotly_chart(
-            fig,
-            use_container_width=True
+    if required_qty > 0:
+
+        st.error(
+            f"""
+            Procurement Required
+
+            Quantity : {required_qty:.2f} Ton
+
+            Vendor : {latest_row['Vendor']}
+            """
         )
 
-    with col2:
+    else:
 
-        stock = (
-            display
-            .groupby(
-                "Chemical",
-                as_index=False
-            )["Available Stock"]
-            .sum()
+        st.success(
+            "✅ Procurement not required."
         )
 
-        fig = px.bar(
-            stock,
-            x="Chemical",
-            y="Available Stock",
-            text="Available Stock"
-        )
+    # =====================================
+    # INVENTORY HISTORY
+    # =====================================
 
-        fig.update_layout(
-            yaxis_title="Stock (Ton)"
-        )
+    st.subheader(
+        "📋 Historical Inventory Records"
+    )
 
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
+    st.dataframe(
+        history.sort_values(
+            "Date",
+            ascending=False
+        ),
+        use_container_width=True,
+        hide_index=True
+    )
 
 # ==================================================
 # CONSUMPTION ANALYSIS
