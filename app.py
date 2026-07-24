@@ -23,7 +23,10 @@ st.set_page_config(
 # ==========================================
 
 master = build_master_stock()
+master = build_master_stock()
 
+st.write(master.head())
+st.write(master.columns)
 if master.empty:
     st.error(
         "No data found in data folder."
