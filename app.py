@@ -832,3 +832,182 @@ elif page == "Inventory Health":
         file_name="Inventory_Health_Report.csv",
         mime="text/csv"
     )
+# ==================================================
+# PROCUREMENT PLANNING
+# ==================================================
+
+elif page == "Procurement Planning":
+
+    st.header("🚚 Procurement Planning Dashboard")
+
+    # =====================================
+    # LATEST CHEMICAL POSITION
+    # =====================================
+
+    latest = (
+        display
+        .sort_values("Date")
+        .groupby("Chemical")
+        .tail(1)
+        .copy()
+    )
+
+    # =====================================
+    # PROCUREMENT CALCULATION
+    # =====================================
+
+    latest["Required Qty"] = (
+        latest["3 Month Requirement"]
+        - latest["Available Stock"]
+    )
+
+    latest["Required Qty"] = latest[
+        "Required Qty"
+    ].clip(lower=0)
+
+    latest["Procurement Status"] = (
+        latest["Required Qty"]
+        .apply(
+            lambda x:
+            "Required"
+            if x > 0
+            else "Not Required"
+        )
+    )
+
+    # =====================================
+    # KPI CARDS
+    # =====================================
+
+    total_required = latest[
+        "Required Qty"
+    ].sum()
+
+    chemicals_to_buy = len(
+        latest[
+            latest["Required Qty"] > 0
+        ]
+    )
+
+    vendors = latest[
+        latest["Vendor"]
+    ].nunique()
+
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+        st.metric(
+            "📦 Chemicals to Procure",
+            chemicals_to_buy
+        )
+
+    with c2:
+        st.metric(
+            "🚚 Total Required Qty",
+            f"{total_required:.2f} Ton"
+        )
+
+    with c3:
+        st.metric(
+            "🏭 Vendors",
+            vendors
+        )
+
+    st.divider()
+
+    # =====================================
+    # PROCUREMENT REQUIRED
+    # =====================================
+
+    st.subheader(
+        "🚨 Chemicals Requiring Procurement"
+    )
+
+    procurement_df = latest[
+        latest["Required Qty"] > 0
+    ].sort_values(
+        "Required Qty",
+        ascending=False
+    )
+
+    if procurement_df.empty:
+
+        st.success(
+            "✅ No Procurement Required"
+        )
+
+    else:
+
+        st.dataframe(
+            procurement_df[
+                [
+                    "Chemical",
+                    "Vendor",
+                    "Available Stock",
+                    "3 Month Requirement",
+                    "Required Qty",
+                    "Available Days"
+                ]
+            ],
+            hide_index=True,
+            use_container_width=True
+        )
+
+    st.divider()
+
+    # =====================================
+    # REQUIRED QUANTITY CHART
+    # =====================================
+
+    st.subheader(
+        "📊 Procurement Quantity"
+    )
+
+    fig = px.bar(
+        procurement_df,
+        x="Chemical",
+        y="Required Qty",
+        color="Vendor",
+        text=procurement_df[
+            "Required Qty"
+        ].round(2),
+        height=600
+    )
+
+    fig.update_traces(
+        textposition="outside"
+    )
+
+    fig.update_layout(
+        template="plotly_white",
+        yaxis_title="Quantity Required (Ton)"
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    st.divider()
+
+    # =====================================
+    # AVAILABLE VS REQUIRED
+    # =====================================
+
+    st.subheader(
+        "📈 Available vs 3 Month Requirement"
+    )
+
+    comparison = latest[
+        [
+            "Chemical",
+            "Available Stock",
+            "3 Month Requirement"
+        ]
+    ]
+
+    fig = px.bar(
+        comparison,
+        x="Chemical",
+        y=[
+            
