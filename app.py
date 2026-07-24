@@ -951,4 +951,180 @@ elif page == "Procurement Planning":
                     "Chemical",
                     "Vendor",
                     "Available Stock",
-                    "3 Month 
+                    "3 Month Requirement",
+                    "Required Qty",
+                    "Available Days"
+                ]
+            ],
+            use_container_width=True,
+            hide_index=True
+        )
+
+    st.divider()
+
+    # =====================================
+    # REQUIRED QUANTITY CHART
+    # =====================================
+
+    st.subheader(
+        "📊 Procurement Quantity by Chemical"
+    )
+
+    if not procurement_df.empty:
+
+        fig = px.bar(
+            procurement_df,
+            x="Chemical",
+            y="Required Qty",
+            color="Vendor",
+            text=procurement_df[
+                "Required Qty"
+            ].round(2),
+            height=550
+        )
+
+        fig.update_traces(
+            textposition="outside"
+        )
+
+        fig.update_layout(
+            template="plotly_white",
+            yaxis_title="Required Quantity (Ton)",
+            xaxis_title="Chemical"
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
+
+    st.divider()
+
+    # =====================================
+    # AVAILABLE VS REQUIRED
+    # =====================================
+
+    st.subheader(
+        "📦 Available Stock vs 3-Month Requirement"
+    )
+
+    comparison = latest[
+        [
+            "Chemical",
+            "Available Stock",
+            "3 Month Requirement"
+        ]
+    ]
+
+    fig = px.bar(
+        comparison,
+        x="Chemical",
+        y=[
+            "Available Stock",
+            "3 Month Requirement"
+        ],
+        barmode="group",
+        height=550
+    )
+
+    fig.update_layout(
+        template="plotly_white",
+        yaxis_title="Quantity (Ton)"
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    st.divider()
+
+    # =====================================
+    # VENDOR WISE PROCUREMENT
+    # =====================================
+
+    st.subheader(
+        "🏭 Vendor-wise Procurement Requirement"
+    )
+
+    vendor_summary = (
+        procurement_df
+        .groupby(
+            "Vendor",
+            as_index=False
+        )["Required Qty"]
+        .sum()
+    )
+
+    if not vendor_summary.empty:
+
+        fig = px.pie(
+            vendor_summary,
+            names="Vendor",
+            values="Required Qty",
+            hole=0.55
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
+
+    st.divider()
+
+    # =====================================
+    # REORDER PRIORITY
+    # =====================================
+
+    st.subheader(
+        "🎯 Reorder Priority"
+    )
+
+    priority_df = latest.copy()
+
+    priority_df["Priority"] = (
+        priority_df["Available Days"]
+        .apply(
+            lambda x:
+            "High"
+            if x < 15
+            else (
+                "Medium"
+                if x < 45
+                else "Low"
+            )
+        )
+    )
+
+    st.dataframe(
+        priority_df[
+            [
+                "Chemical",
+                "Available Days",
+                "Vendor",
+                "Priority"
+            ]
+        ]
+        .sort_values(
+            "Available Days"
+        ),
+        use_container_width=True,
+        hide_index=True
+    )
+
+    st.divider()
+
+    # =====================================
+    # DOWNLOAD REPORT
+    # =====================================
+
+    csv = priority_df.to_csv(
+        index=False
+    ).encode("utf-8")
+
+    st.download_button(
+        "📥 Download Procurement Report",
+        csv,
+        file_name="Procurement_Report.csv",
+        mime="text/csv"
+    )
