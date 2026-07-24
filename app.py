@@ -640,30 +640,30 @@ st.divider()
 # EXECUTIVE REMARKS
 # ======================================================
 
-st.subheader("📝 Executive Remarks")
-
-    if summary["Critical"] > 0:
-    
+        st.subheader("📝 Executive Remarks")
+        
+        if summary["Critical"] > 0:
+        
         st.error(
-    
+        
             "Immediate procurement is recommended for critical chemicals."
-    
+        
         )
-    
-    elif summary["Warning"] > 0:
-    
+        
+        elif summary["Warning"] > 0:
+        
         st.warning(
-    
+        
             "Some chemicals are approaching the reorder level."
-    
+        
         )
-    
-    else: 
-    
+        
+        else: 
+        
         st.success(
-    
+        
             "Inventory is healthy. No immediate procurement required."
-    
+        
         )
 
 # ==========================================================
