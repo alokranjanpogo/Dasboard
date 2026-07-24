@@ -168,503 +168,503 @@ selected = option_menu(
 
 if selected == "Executive Dashboard":
 
-    st.header("📊 Executive Dashboard")
-
-    if inventory.empty:
-        st.warning("No data available for selected filters.")
-        st.stop()
-
-    col1, col2, col3, col4 = st.columns(4)
-
-    with col1:
-        st.metric(
-            "Total Chemicals",
-            inventory["Chemical"].nunique()
+        st.header("📊 Executive Dashboard")
+    
+        if inventory.empty:
+            st.warning("No data available for selected filters.")
+            st.stop()
+    
+        col1, col2, col3, col4 = st.columns(4)
+    
+        with col1:
+            st.metric(
+                "Total Chemicals",
+                inventory["Chemical"].nunique()
+            )
+    
+        with col2:
+            st.metric(
+                "Total Stock",
+                f'{inventory["Available Stock"].sum():,.2f} Ton'
+            )
+    
+        with col3:
+            st.metric(
+                "Daily Requirement",
+                f'{inventory["Daily Requirement"].sum():,.2f} Ton'
+            )
+    
+        with col4:
+            st.metric(
+                "Monthly Requirement",
+                f'{inventory["Monthly Requirement"].sum():,.2f} Ton'
+            )
+    
+        st.divider()
+    
+        inventory = stock_health(inventory)
+    
+        status = (
+            inventory.groupby(
+                "Status",
+                as_index=False
+            ).size()
         )
-
-    with col2:
-        st.metric(
-            "Total Stock",
-            f'{inventory["Available Stock"].sum():,.2f} Ton'
+    
+        fig = px.pie(
+            status,
+            names="Status",
+            values="size",
+            hole=0.55
         )
-
-    with col3:
-        st.metric(
-            "Daily Requirement",
-            f'{inventory["Daily Requirement"].sum():,.2f} Ton'
+    
+        st.plotly_chart(
+            fig,
+            use_container_width=True
         )
-
-    with col4:
-        st.metric(
-            "Monthly Requirement",
-            f'{inventory["Monthly Requirement"].sum():,.2f} Ton'
+    
+        st.subheader("Current Inventory")
+    
+        st.dataframe(
+            inventory,
+            use_container_width=True,
+            hide_index=True
         )
-
+    
+        csv = inventory.to_csv(
+            index=False
+        ).encode("utf-8")
+    
+        st.download_button(
+            "📥 Download Executive Report",
+            csv,
+            file_name="Executive_Report.csv",
+            mime="text/csv"
+        )
+    # ======================================================
+    # HEALTH CARDS
+    # ======================================================
+    
+    st.subheader("Inventory Health")
+    
+    c1,c2,c3 = st.columns(3)
+    
+    with c1:
+    
+        st.success(
+            f'🟢 Healthy : {summary["Healthy"]}'
+        )
+    
+    with c2:
+    
+        st.warning(
+            f'🟡 Warning : {summary["Warning"]}'
+        )
+    
+    with c3:
+    
+        st.error(
+            f'🔴 Critical : {summary["Critical"]}'
+        )
+    
     st.divider()
-
-    inventory = stock_health(inventory)
-
-    status = (
-        inventory.groupby(
+    
+    # ======================================================
+    # STOCK TABLE
+    # ======================================================
+    
+    st.subheader("Current Stock")
+    
+    st.dataframe(
+    
+        display,
+    
+        hide_index=True,
+    
+        use_container_width=True,
+    
+        height=420
+    
+    )
+    
+    st.divider()
+    
+    # ======================================================
+    # AVAILABLE STOCK
+    # ======================================================
+    
+    st.subheader("Available Stock by Chemical")
+    
+    fig = px.bar(
+    
+        display,
+    
+        x="Chemical",
+    
+        y="Available Stock",
+    
+        color="Status",
+    
+        text="Available Stock",
+    
+        color_discrete_map={
+    
+            "Healthy":"green",
+    
+            "Warning":"orange",
+    
+            "Critical":"red"
+    
+        },
+    
+        height=520
+    
+    )
+    
+    fig.update_layout(
+    
+        template="plotly_white",
+    
+        xaxis_title="Chemical",
+    
+        yaxis_title="Stock (Ton)"
+    
+    )
+    
+    fig.update_traces(
+    
+        textposition="outside"
+    
+    )
+    
+    st.plotly_chart(
+    
+        fig,
+    
+        use_container_width=True
+    
+    )
+    
+    # ======================================================
+    # AVAILABLE DAYS
+    # ======================================================
+    
+    st.subheader("Remaining Stock Days")
+    
+    fig = px.bar(
+    
+        display,
+    
+        x="Chemical",
+    
+        y="Available Days",
+    
+        color="Status",
+    
+        text="Available Days",
+    
+        color_discrete_map={
+    
+            "Healthy":"green",
+    
+            "Warning":"orange",
+    
+            "Critical":"red"
+    
+        },
+    
+        height=520
+    
+    )
+    
+    fig.update_layout(
+    
+        template="plotly_white"
+    
+    )
+    
+    st.plotly_chart(
+    
+        fig,
+    
+        use_container_width=True
+    
+    )
+    
+    # ======================================================
+    # PIE
+    # ======================================================
+    
+    st.subheader("Stock Distribution")
+    
+    fig = px.pie(
+    
+        display,
+    
+        names="Chemical",
+    
+        values="Available Stock",
+    
+        hole=.60
+    
+    )
+    
+    st.plotly_chart(
+    
+        fig,
+    
+        use_container_width=True
+    
+    )
+    
+    st.divider()
+    
+    # ======================================================
+    # CRITICAL CHEMICAL ALERT
+    # ======================================================
+    
+    st.subheader("🚨 Critical Chemical Alert")
+    
+    critical_df = display[
+        display["Status"] == "Critical"
+    ]
+    
+    if critical_df.empty:
+    
+        st.success(
+            "✅ No critical chemicals found."
+        )
+    
+    else:
+    
+        st.error(
+            f"{len(critical_df)} chemical(s) require immediate procurement."
+        )
+    
+        st.dataframe(
+    
+            critical_df[
+                [
+                    "Chemical",
+                    "Available Stock",
+                    "Available Days",
+                    "Vendor"
+                ]
+            ],
+    
+            hide_index=True,
+    
+            use_container_width=True
+    
+        )
+    
+    st.divider()
+    
+    # ======================================================
+    # VENDOR SUMMARY
+    # ======================================================
+    
+    st.subheader("🏭 Vendor Summary")
+    
+    vendor = (
+    
+        display
+    
+        .groupby(
+            "Vendor",
+            as_index=False
+        )
+    
+        .agg({
+    
+            "Chemical":"count",
+    
+            "Available Stock":"sum",
+    
+            "Available Days":"mean"
+    
+        })
+    
+    )
+    
+    vendor.columns=[
+    
+        "Vendor",
+    
+        "Chemicals",
+    
+        "Total Stock",
+    
+        "Average Days"
+    
+    ]
+    
+    st.dataframe(
+    
+        vendor,
+    
+        hide_index=True,
+    
+        use_container_width=True
+    
+    )
+    
+    st.divider()
+    
+    # ======================================================
+    # STOCK HEALTH DONUT
+    # ======================================================
+    
+    st.subheader("🟢 Inventory Health")
+    
+    health = (
+    
+        display
+    
+        .groupby(
             "Status",
             as_index=False
-        ).size()
+        )
+    
+        .size()
+    
     )
-
+    
     fig = px.pie(
-        status,
+    
+        health,
+    
         names="Status",
+    
         values="size",
-        hole=0.55
+    
+        hole=0.65,
+    
+        color="Status",
+    
+        color_discrete_map={
+    
+            "Healthy":"green",
+    
+            "Warning":"orange",
+    
+            "Critical":"red"
+    
+        }
+    
     )
-
+    
+    fig.update_layout(
+    
+        template="plotly_white"
+    
+    )
+    
     st.plotly_chart(
+    
         fig,
+    
         use_container_width=True
+    
     )
-
-    st.subheader("Current Inventory")
-
+    
+    st.divider()
+    
+    # ======================================================
+    # INVENTORY SUMMARY
+    # ======================================================
+    
+    st.subheader("📋 Inventory Summary")
+    
+    inventory = display[
+    
+        [
+    
+            "Chemical",
+    
+            "Available Stock",
+    
+            "Available Days",
+    
+            "Vendor",
+    
+            "Status"
+    
+        ]
+    
+    ].sort_values(
+    
+        "Available Days"
+    
+    )
+    
     st.dataframe(
+    
         inventory,
+    
         use_container_width=True,
-        hide_index=True
+    
+        hide_index=True,
+    
+        height=420
+    
     )
-
+    
+    st.divider()
+    
+    # ======================================================
+    # DOWNLOAD REPORT
+    # ======================================================
+    
+    st.subheader("📥 Download Executive Report")
+    
     csv = inventory.to_csv(
         index=False
     ).encode("utf-8")
-
+    
     st.download_button(
-        "📥 Download Executive Report",
+    
+        "📄 Download CSV",
+    
         csv,
-        file_name="Executive_Report.csv",
+    
+        file_name="Executive_Dashboard_Report.csv",
+    
         mime="text/csv"
+    
     )
-# ======================================================
-# HEALTH CARDS
-# ======================================================
-
-st.subheader("Inventory Health")
-
-c1,c2,c3 = st.columns(3)
-
-with c1:
-
-    st.success(
-        f'🟢 Healthy : {summary["Healthy"]}'
+    
+    st.divider()
+    
+    # ======================================================
+    # EXECUTIVE REMARKS
+    # ======================================================
+    
+    st.subheader("📝 Executive Remarks")
+    
+    if summary["Critical"] > 0:
+    
+    st.error(
+    
+        "Immediate procurement is recommended for critical chemicals."
+    
     )
-
-with c2:
-
+    
+    elif summary["Warning"] > 0:
+    
     st.warning(
-        f'🟡 Warning : {summary["Warning"]}'
+    
+        "Some chemicals are approaching the reorder level."
+    
     )
-
-with c3:
-
-    st.error(
-        f'🔴 Critical : {summary["Critical"]}'
-    )
-
-st.divider()
-
-# ======================================================
-# STOCK TABLE
-# ======================================================
-
-st.subheader("Current Stock")
-
-st.dataframe(
-
-    display,
-
-    hide_index=True,
-
-    use_container_width=True,
-
-    height=420
-
-)
-
-st.divider()
-
-# ======================================================
-# AVAILABLE STOCK
-# ======================================================
-
-st.subheader("Available Stock by Chemical")
-
-fig = px.bar(
-
-    display,
-
-    x="Chemical",
-
-    y="Available Stock",
-
-    color="Status",
-
-    text="Available Stock",
-
-    color_discrete_map={
-
-        "Healthy":"green",
-
-        "Warning":"orange",
-
-        "Critical":"red"
-
-    },
-
-    height=520
-
-)
-
-fig.update_layout(
-
-    template="plotly_white",
-
-    xaxis_title="Chemical",
-
-    yaxis_title="Stock (Ton)"
-
-)
-
-fig.update_traces(
-
-    textposition="outside"
-
-)
-
-st.plotly_chart(
-
-    fig,
-
-    use_container_width=True
-
-)
-
-# ======================================================
-# AVAILABLE DAYS
-# ======================================================
-
-st.subheader("Remaining Stock Days")
-
-fig = px.bar(
-
-    display,
-
-    x="Chemical",
-
-    y="Available Days",
-
-    color="Status",
-
-    text="Available Days",
-
-    color_discrete_map={
-
-        "Healthy":"green",
-
-        "Warning":"orange",
-
-        "Critical":"red"
-
-    },
-
-    height=520
-
-)
-
-fig.update_layout(
-
-    template="plotly_white"
-
-)
-
-st.plotly_chart(
-
-    fig,
-
-    use_container_width=True
-
-)
-
-# ======================================================
-# PIE
-# ======================================================
-
-st.subheader("Stock Distribution")
-
-fig = px.pie(
-
-    display,
-
-    names="Chemical",
-
-    values="Available Stock",
-
-    hole=.60
-
-)
-
-st.plotly_chart(
-
-    fig,
-
-    use_container_width=True
-
-)
-
-st.divider()
-
-# ======================================================
-# CRITICAL CHEMICAL ALERT
-# ======================================================
-
-st.subheader("🚨 Critical Chemical Alert")
-
-critical_df = display[
-    display["Status"] == "Critical"
-]
-
-if critical_df.empty:
-
+    
+    else: 
+    
     st.success(
-        "✅ No critical chemicals found."
+    
+        "Inventory is healthy. No immediate procurement required."
+    
     )
-
-else:
-
-    st.error(
-        f"{len(critical_df)} chemical(s) require immediate procurement."
-    )
-
-    st.dataframe(
-
-        critical_df[
-            [
-                "Chemical",
-                "Available Stock",
-                "Available Days",
-                "Vendor"
-            ]
-        ],
-
-        hide_index=True,
-
-        use_container_width=True
-
-    )
-
-st.divider()
-
-# ======================================================
-# VENDOR SUMMARY
-# ======================================================
-
-st.subheader("🏭 Vendor Summary")
-
-vendor = (
-
-    display
-
-    .groupby(
-        "Vendor",
-        as_index=False
-    )
-
-    .agg({
-
-        "Chemical":"count",
-
-        "Available Stock":"sum",
-
-        "Available Days":"mean"
-
-    })
-
-)
-
-vendor.columns=[
-
-    "Vendor",
-
-    "Chemicals",
-
-    "Total Stock",
-
-    "Average Days"
-
-]
-
-st.dataframe(
-
-    vendor,
-
-    hide_index=True,
-
-    use_container_width=True
-
-)
-
-st.divider()
-
-# ======================================================
-# STOCK HEALTH DONUT
-# ======================================================
-
-st.subheader("🟢 Inventory Health")
-
-health = (
-
-    display
-
-    .groupby(
-        "Status",
-        as_index=False
-    )
-
-    .size()
-
-)
-
-fig = px.pie(
-
-    health,
-
-    names="Status",
-
-    values="size",
-
-    hole=0.65,
-
-    color="Status",
-
-    color_discrete_map={
-
-        "Healthy":"green",
-
-        "Warning":"orange",
-
-        "Critical":"red"
-
-    }
-
-)
-
-fig.update_layout(
-
-    template="plotly_white"
-
-)
-
-st.plotly_chart(
-
-    fig,
-
-    use_container_width=True
-
-)
-
-st.divider()
-
-# ======================================================
-# INVENTORY SUMMARY
-# ======================================================
-
-st.subheader("📋 Inventory Summary")
-
-inventory = display[
-
-    [
-
-        "Chemical",
-
-        "Available Stock",
-
-        "Available Days",
-
-        "Vendor",
-
-        "Status"
-
-    ]
-
-].sort_values(
-
-    "Available Days"
-
-)
-
-st.dataframe(
-
-    inventory,
-
-    use_container_width=True,
-
-    hide_index=True,
-
-    height=420
-
-)
-
-st.divider()
-
-# ======================================================
-# DOWNLOAD REPORT
-# ======================================================
-
-st.subheader("📥 Download Executive Report")
-
-csv = inventory.to_csv(
-    index=False
-).encode("utf-8")
-
-st.download_button(
-
-    "📄 Download CSV",
-
-    csv,
-
-    file_name="Executive_Dashboard_Report.csv",
-
-    mime="text/csv"
-
-)
-
-st.divider()
-
-# ======================================================
-# EXECUTIVE REMARKS
-# ======================================================
-
-        st.subheader("📝 Executive Remarks")
-        
-        if summary["Critical"] > 0:
-        
-        st.error(
-        
-            "Immediate procurement is recommended for critical chemicals."
-        
-        )
-        
-        elif summary["Warning"] > 0:
-        
-        st.warning(
-        
-            "Some chemicals are approaching the reorder level."
-        
-        )
-        
-        else: 
-        
-        st.success(
-        
-            "Inventory is healthy. No immediate procurement required."
-        
-        )
 
 # ==========================================================
 # CONSUMPTION ANALYSIS
