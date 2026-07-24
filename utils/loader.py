@@ -1,6 +1,6 @@
 # ==========================================================
 # Chemical Dashboard
-# Loader.py
+# loader.py
 # ==========================================================
 
 import os
@@ -18,13 +18,8 @@ DATA_FOLDER = "data"
 # ==========================================================
 
 def get_excel_files():
-
-    files = glob.glob(
-        os.path.join(DATA_FOLDER, "*.xlsx")
-    )
-
+    files = glob.glob(os.path.join(DATA_FOLDER, "*.xlsx"))
     files.sort()
-
     return files
 
 
@@ -33,7 +28,6 @@ def get_excel_files():
 # ==========================================================
 
 MONTHS = [
-
     "January",
     "February",
     "March",
@@ -46,9 +40,7 @@ MONTHS = [
     "October",
     "November",
     "December"
-
 ]
-
 
 
 # ==========================================================
@@ -56,27 +48,18 @@ MONTHS = [
 # ==========================================================
 
 def read_workbook(file):
-
     try:
-
         workbook = pd.read_excel(
             file,
             sheet_name=None,
-            header=1, # Second row contains headers
+            header=1,
             engine="openpyxl"
         )
-
         return workbook
-
     except Exception as e:
-
         print(e)
-
         return {}
 
-# ==========================================================
-# BUILD MASTER DATAFRAME
-# ==========================================================
 
 # ==========================================================
 # BUILD MASTER DATAFRAME
@@ -86,10 +69,10 @@ def build_master_stock():
 
     files = get_excel_files()
 
-    master = []
-
     if not files:
         return pd.DataFrame()
+
+    master = []
 
     for file in files:
 
@@ -97,26 +80,22 @@ def build_master_stock():
 
         for sheet_name, df in workbook.items():
 
-            # Ignore unwanted sheets
             if str(sheet_name).lower() in ["sheet1", "sheet2"]:
                 continue
 
             if df.empty:
                 continue
 
-            # Remove completely blank rows
             df = df.dropna(how="all")
 
             if df.empty:
                 continue
 
-           # Keep only first 8 columns if available
             df = df.iloc[:, :min(8, len(df.columns))]
-            
-            # Skip sheets having fewer than 8 columns
+
             if len(df.columns) < 8:
                 continue
-            
+
             df.columns = [
                 "Date",
                 "Chemical",
@@ -127,10 +106,9 @@ def build_master_stock():
                 "Available Days",
                 "Vendor"
             ]
-            # Remove blank chemicals
+
             df = df.dropna(subset=["Chemical"])
 
-            # Remove Group rows
             df = df[
                 ~df["Chemical"].astype(str).str.contains(
                     "Group",
@@ -139,7 +117,6 @@ def build_master_stock():
                 )
             ]
 
-            # Remove Total rows
             df = df[
                 ~df["Chemical"].astype(str).str.contains(
                     "Total",
@@ -148,7 +125,6 @@ def build_master_stock():
                 )
             ]
 
-            # Date comes from SHEET NAME
             sheet_date = pd.to_datetime(
                 sheet_name,
                 dayfirst=True,
@@ -159,13 +135,12 @@ def build_master_stock():
                 continue
 
             df["Date"] = sheet_date
-
             df["Year"] = sheet_date.year
             df["Month"] = sheet_date.strftime("%B")
             df["Week"] = int(sheet_date.isocalendar().week)
             df["Day"] = sheet_date.day
 
-            numeric = [
+            numeric_cols = [
                 "Daily Requirement",
                 "Monthly Requirement",
                 "3 Month Requirement",
@@ -173,30 +148,20 @@ def build_master_stock():
                 "Available Days"
             ]
 
-            for col in numeric:
-                df[col] = pd.to_numeric(
-                    df[col],
-                    errors="coerce"
-                )
+            for col in numeric_cols:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
 
             master.append(df)
 
     if not master:
         return pd.DataFrame()
 
-    master = pd.concat(
-        master,
-        ignore_index=True
-    )
-
+    master = pd.concat(master, ignore_index=True)
     master = master.sort_values("Date")
-
-    master.reset_index(
-        drop=True,
-        inplace=True
-    )
+    master.reset_index(drop=True, inplace=True)
 
     return master
+
 
 # ==========================================================
 # GET LATEST STOCK
@@ -207,7 +172,6 @@ def get_latest_stock():
     master = build_master_stock()
 
     if master.empty:
-
         return "", pd.DataFrame()
 
     latest_date = master["Date"].max()
@@ -216,10 +180,7 @@ def get_latest_stock():
         master["Date"] == latest_date
     ].copy()
 
-    latest_df.reset_index(
-        drop=True,
-        inplace=True
-    )
+    latest_df.reset_index(drop=True, inplace=True)
 
     return (
         latest_date.strftime("%d-%m-%Y"),
@@ -236,14 +197,11 @@ def get_years():
     master = build_master_stock()
 
     if master.empty:
-
         return []
 
-    years = sorted(
+    return sorted(
         master["Year"].dropna().unique().tolist()
     )
-
-    return years
 
 
 # ==========================================================
@@ -255,58 +213,38 @@ def get_months(year="All"):
     master = build_master_stock()
 
     if master.empty:
-
         return []
 
     if year != "All":
+        master = master[master["Year"] == year]
 
-        master = master[
-            master["Year"] == year
-        ]
-
-    months = []
-
-    for month in MONTHS:
-
-        if month in master["Month"].unique():
-
-            months.append(month)
-
-    return months
+    return [
+        month
+        for month in MONTHS
+        if month in master["Month"].unique()
+    ]
 
 
 # ==========================================================
 # AVAILABLE WEEKS
 # ==========================================================
 
-def get_weeks(
-        year="All",
-        month="All"
-):
+def get_weeks(year="All", month="All"):
 
     master = build_master_stock()
 
     if master.empty:
-
         return []
 
     if year != "All":
-
-        master = master[
-            master["Year"] == year
-        ]
+        master = master[master["Year"] == year]
 
     if month != "All":
+        master = master[master["Month"] == month]
 
-        master = master[
-            master["Month"] == month
-        ]
-
-    weeks = sorted(
+    return sorted(
         master["Week"].dropna().unique().tolist()
     )
-
-    return weeks
 
 
 # ==========================================================
@@ -318,14 +256,11 @@ def get_chemicals():
     master = build_master_stock()
 
     if master.empty:
-
         return []
 
-    chemicals = sorted(
+    return sorted(
         master["Chemical"].dropna().unique().tolist()
     )
-
-    return chemicals
 
 
 # ==========================================================
@@ -342,42 +277,27 @@ def filter_data(
     master = build_master_stock()
 
     if master.empty:
-
         return master
 
     if year != "All":
-
-        master = master[
-            master["Year"] == year
-        ]
+        master = master[master["Year"] == year]
 
     if month != "All":
-
-        master = master[
-            master["Month"] == month
-        ]
+        master = master[master["Month"] == month]
 
     if week != "All":
-
-        master = master[
-            master["Week"] == week
-        ]
+        master = master[master["Week"] == week]
 
     if chemical != "All":
+        master = master[master["Chemical"] == chemical]
 
-        master = master[
-            master["Chemical"] == chemical
-        ]
-
-    master.reset_index(
-        drop=True,
-        inplace=True
-    )
+    master.reset_index(drop=True, inplace=True)
 
     return master
 
+
 # ==========================================================
-# DAILY CONSUMPTION CALCULATION
+# DAILY CONSUMPTION
 # ==========================================================
 
 def calculate_consumption():
@@ -385,7 +305,6 @@ def calculate_consumption():
     master = build_master_stock()
 
     if master.empty:
-
         return pd.DataFrame()
 
     master = master.sort_values(
@@ -415,12 +334,10 @@ def calculate_consumption():
 
         consumption.append(temp)
 
-    consumption = pd.concat(
+    return pd.concat(
         consumption,
         ignore_index=True
     )
-
-    return consumption
 
 
 # ==========================================================
@@ -432,7 +349,6 @@ def weekly_consumption():
     df = calculate_consumption()
 
     if df.empty:
-
         return pd.DataFrame()
 
     return (
@@ -453,7 +369,6 @@ def monthly_consumption():
     df = calculate_consumption()
 
     if df.empty:
-
         return pd.DataFrame()
 
     return (
@@ -474,7 +389,6 @@ def yearly_consumption():
     df = calculate_consumption()
 
     if df.empty:
-
         return pd.DataFrame()
 
     return (
@@ -491,24 +405,11 @@ def yearly_consumption():
 # ==========================================================
 
 def chemical_consumption():
-
-    df = calculate_consumption()
-
-    if df.empty:
-
-        return pd.DataFrame()
-
-    return (
-        df.groupby(
-            "Chemical",
-            as_index=False
-        )["Consumption"]
-        .sum()
-    )
+    return calculate_consumption()
 
 
 # ==========================================================
-# EXECUTIVE KPI SUMMARY
+# DASHBOARD SUMMARY
 # ==========================================================
 
 def dashboard_summary():
@@ -516,60 +417,23 @@ def dashboard_summary():
     latest_date, latest = get_latest_stock()
 
     if latest.empty:
-
         return {}
 
-    summary = {
-
+    return {
         "Latest Date": latest_date,
-
-        "Total Chemicals":
-            latest["Chemical"].nunique(),
-
-        "Total Stock":
-            round(
-                latest["Available Stock"].sum(),
-                2
-            ),
-
-        "Daily Requirement":
-            round(
-                latest["Daily Requirement"].sum(),
-                2
-            ),
-
-        "Monthly Requirement":
-            round(
-                latest["Monthly Requirement"].sum(),
-                2
-            ),
-
-        "Healthy":
-            len(
-                latest[
-                    latest["Available Days"] >= 90
-                ]
-            ),
-
-        "Warning":
-            len(
-                latest[
-                    (latest["Available Days"] >= 30)
-                    &
-                    (latest["Available Days"] < 90)
-                ]
-            ),
-
-        "Critical":
-            len(
-                latest[
-                    latest["Available Days"] < 30
-                ]
-            )
-
+        "Total Chemicals": latest["Chemical"].nunique(),
+        "Total Stock": round(latest["Available Stock"].sum(), 2),
+        "Daily Requirement": round(latest["Daily Requirement"].sum(), 2),
+        "Monthly Requirement": round(latest["Monthly Requirement"].sum(), 2),
+        "Healthy": len(latest[latest["Available Days"] >= 90]),
+        "Warning": len(
+            latest[
+                (latest["Available Days"] >= 30)
+                & (latest["Available Days"] < 90)
+            ]
+        ),
+        "Critical": len(latest[latest["Available Days"] < 30])
     }
-
-    return summary
 
 
 # ==========================================================
@@ -579,27 +443,18 @@ def dashboard_summary():
 def stock_health(df):
 
     if df.empty:
-
         return df
 
     df = df.copy()
 
     def health(days):
-
         if days >= 90:
-
             return "Healthy"
-
         elif days >= 30:
-
             return "Warning"
-
         else:
-
             return "Critical"
 
-    df["Status"] = df[
-        "Available Days"
-    ].apply(health)
+    df["Status"] = df["Available Days"].apply(health)
 
     return df
