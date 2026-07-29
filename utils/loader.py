@@ -1,68 +1,96 @@
-import glob
+import os
 import pandas as pd
 
+DATA_FOLDER = "data"
 
-def build_master_stock():
 
-    files = glob.glob("data/*.xlsx")
+def load_stock_master():
 
-    if not files:
+    file = os.path.join(
+        DATA_FOLDER,
+        "2026_Stock_Master.xlsx"
+    )
+
+    if not os.path.exists(file):
         return pd.DataFrame()
 
-    master = []
-
-    for file in files:
-
-        df = pd.read_excel(
-            file,
-            sheet_name="MasterData",
-            engine="openpyxl"
-        )
-
-        master.append(df)
-
-    master = pd.concat(
-        master,
-        ignore_index=True
+    df = pd.read_excel(
+        file,
+        sheet_name="Stock_Master",
+        engine="openpyxl"
     )
 
-    master["Date"] = pd.to_datetime(
-        master["Date"]
-    )
-
-    return master
-
-
-def calculate_consumption():
-
-    df = build_master_stock()
-
-    if df.empty:
-        return pd.DataFrame()
-
-    df = df.sort_values(
-        ["Chemical", "Date"]
-    )
-
-    df["Consumption"] = (
-        df.groupby("Chemical")
-        ["Available Stock"]
-        .shift(1)
-        - df["Available Stock"]
-    )
-
-    df["Consumption"] = (
-        df["Consumption"]
-        .fillna(0)
-        .clip(lower=0)
+    df["Date"] = pd.to_datetime(
+        df["Date"],
+        errors="coerce"
     )
 
     return df
 
 
-def stock_health(df):
+def load_consumption_master():
 
-    df = df.copy()
+    file = os.path.join(
+        DATA_FOLDER,
+        "2026_Consumption_Master1.xlsx"
+    )
+
+    if not os.path.exists(file):
+        return pd.DataFrame()
+
+    df = pd.read_excel(
+        file,
+        sheet_name="Consumption_Master",
+        engine="openpyxl"
+    )
+
+    df["Date"] = pd.to_datetime(
+        df["Date"],
+        errors="coerce"
+    )
+
+    df["Year"] = df["Date"].dt.year
+    df["Month"] = df["Date"].dt.month_name()
+    df["Week"] = df["Date"].dt.isocalendar().week
+
+    return df
+
+
+def load_po_tracker():
+
+    file = os.path.join(
+        DATA_FOLDER,
+        "2026_PO_Tracker.xlsx"
+    )
+
+    if not os.path.exists(file):
+        return pd.DataFrame()
+
+    return pd.read_excel(
+        file,
+        sheet_name="PO_Tracker",
+        engine="openpyxl"
+    )
+
+
+def load_chemical_master():
+
+    file = os.path.join(
+        DATA_FOLDER,
+        "Chemical_Master.xlsx"
+    )
+
+    if not os.path.exists(file):
+        return pd.DataFrame()
+
+    return pd.read_excel(
+        file,
+        sheet_name="Chemical_Master",
+        engine="openpyxl"
+    )
+
+
+def stock_health(df):
 
     def get_status(days):
 
@@ -72,11 +100,12 @@ def stock_health(df):
         elif days >= 30:
             return "Warning"
 
-        else:
-            return "Critical"
+        return "Critical"
 
-    df["Status"] = df[
-        "Available Days"
-    ].apply(get_status)
+    df["Status"] = (
+        df["Available Days"]
+        .fillna(0)
+        .apply(get_status)
+    )
 
     return df
