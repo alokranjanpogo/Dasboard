@@ -488,1543 +488,1543 @@ if page == "Executive Dashboard":
         hide_index=True,
         use_container_width=True
     )
-    # =====================================================
-    # CONSUMPTION ANALYSIS
-    # =====================================================
-    
-    elif page == "Consumption Analysis":
-    
-        st.header("📈 Consumption Analysis")
-    
-        if consumption.empty:
-    
-            st.warning(
-                "No Consumption Data Found"
-            )
-    
-            st.stop()
-    
-        selected_chemical = st.selectbox(
-            "🧪 Select Chemical",
-            sorted(
-                consumption["Chemical"]
-                .unique()
-                .tolist()
-            ),
-            key="consumption_page"
+# =====================================================
+# CONSUMPTION ANALYSIS
+# =====================================================
+
+elif page == "Consumption Analysis":
+
+    st.header("📈 Consumption Analysis")
+
+    if consumption.empty:
+
+        st.warning(
+            "No Consumption Data Found"
         )
-    
-        chem_df = consumption[
+
+        st.stop()
+
+    selected_chemical = st.selectbox(
+        "🧪 Select Chemical",
+        sorted(
             consumption["Chemical"]
-            == selected_chemical
-        ].copy()
-    
-        if chem_df.empty:
-    
-            st.warning("No Data Found")
-    
-            st.stop()
-    
-        # ==================================
-        # KPI CARDS
-        # ==================================
-    
-        total_consumption = (
-            chem_df["Consumption"]
-            .sum()
-        )
-    
-        avg_consumption = (
-            chem_df["Consumption"]
-            .mean()
-        )
-    
-        max_consumption = (
-            chem_df["Consumption"]
-            .max()
-        )
-    
-        locations_count = (
-            chem_df["Location"]
-            .nunique()
-        )
-    
-        st.markdown("---")
-    
-        c1, c2, c3, c4 = st.columns(4)
-    
-        with c1:
-    
-            st.metric(
-                "Total Consumption",
-                round(
-                    total_consumption,
-                    2
-                )
+            .unique()
+            .tolist()
+        ),
+        key="consumption_page"
+    )
+
+    chem_df = consumption[
+        consumption["Chemical"]
+        == selected_chemical
+    ].copy()
+
+    if chem_df.empty:
+
+        st.warning("No Data Found")
+
+        st.stop()
+
+    # ==================================
+    # KPI CARDS
+    # ==================================
+
+    total_consumption = (
+        chem_df["Consumption"]
+        .sum()
+    )
+
+    avg_consumption = (
+        chem_df["Consumption"]
+        .mean()
+    )
+
+    max_consumption = (
+        chem_df["Consumption"]
+        .max()
+    )
+
+    locations_count = (
+        chem_df["Location"]
+        .nunique()
+    )
+
+    st.markdown("---")
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+
+        st.metric(
+            "Total Consumption",
+            round(
+                total_consumption,
+                2
             )
-    
-        with c2:
-    
-            st.metric(
-                "Average Consumption",
-                round(
-                    avg_consumption,
-                    2
-                )
+        )
+
+    with c2:
+
+        st.metric(
+            "Average Consumption",
+            round(
+                avg_consumption,
+                2
             )
-    
-        with c3:
-    
-            st.metric(
-                "Maximum Consumption",
-                round(
-                    max_consumption,
-                    2
-                )
+        )
+
+    with c3:
+
+        st.metric(
+            "Maximum Consumption",
+            round(
+                max_consumption,
+                2
             )
-    
-        with c4:
-    
-            st.metric(
-                "Locations",
-                locations_count
-            )
-    
-        # ==================================
-        # DAILY TREND
-        # ==================================
-    
-        st.markdown("---")
-    
-        st.subheader(
-            f"📅 Daily Consumption Trend : {selected_chemical}"
         )
-    
-        daily = (
-            chem_df
-            .groupby("Date")
-            ["Consumption"]
-            .sum()
-            .reset_index()
+
+    with c4:
+
+        st.metric(
+            "Locations",
+            locations_count
         )
-    
-        fig_daily = px.line(
-            daily,
-            x="Date",
-            y="Consumption",
-            markers=True
-        )
-    
-        fig_daily.update_layout(
-            template="plotly_white",
-            height=500
-        )
-    
-        st.plotly_chart(
-            fig_daily,
-            use_container_width=True
-        )
-    
-        # ==================================
-        # WEEKLY TREND
-        # ==================================
-    
-        st.subheader(
-            "📆 Weekly Consumption"
-        )
-    
-        weekly = (
-            chem_df
-            .groupby(
-                "Week",
-                as_index=False
-            )["Consumption"]
-            .sum()
-        )
-    
-        fig_weekly = px.bar(
-            weekly,
-            x="Week",
-            y="Consumption",
-            text="Consumption",
-            color="Consumption"
-        )
-    
-        fig_weekly.update_layout(
-            template="plotly_white",
-            height=500
-        )
-    
-        st.plotly_chart(
-            fig_weekly,
-            use_container_width=True
-        )
-    
-        # ==================================
-        # MONTHLY TREND
-        # ==================================
-    
-        st.subheader(
-            "📅 Monthly Consumption"
-        )
-    
-        monthly = (
-            chem_df
-            .groupby(
-                "Month",
-                as_index=False
-            )["Consumption"]
-            .sum()
-        )
-    
-        fig_month = px.bar(
-            monthly,
-            x="Month",
-            y="Consumption",
-            text="Consumption",
-            color="Consumption"
-        )
-    
-        fig_month.update_layout(
-            template="plotly_white",
-            height=500
-        )
-    
-        st.plotly_chart(
-            fig_month,
-            use_container_width=True
-        )
-    
-        # ==================================
-        # YEARLY TREND
-        # ==================================
-    
-        st.subheader(
-            "📈 Yearly Consumption"
-        )
-    
-        yearly = (
-            chem_df
-            .groupby(
-                "Year",
-                as_index=False
-            )["Consumption"]
-            .sum()
-        )
-    
-        fig_year = px.line(
-            yearly,
-            x="Year",
-            y="Consumption",
-            markers=True
-        )
-    
-        fig_year.update_layout(
-            template="plotly_white",
-            height=500
-        )
-    
-        st.plotly_chart(
-            fig_year,
-            use_container_width=True
-        )
-    
-        # ==================================
-        # SHIFT ANALYSIS
-        # ==================================
-    
-        st.markdown("---")
-    
-        st.subheader(
-            "🏭 Shift-wise Consumption"
-        )
-    
-        shift_data = (
-            chem_df
-            .groupby(
-                "Shift",
-                as_index=False
-            )["Consumption"]
-            .sum()
-        )
-    
-        fig_shift = px.pie(
-            shift_data,
-            names="Shift",
+
+    # ==================================
+    # DAILY TREND
+    # ==================================
+
+    st.markdown("---")
+
+    st.subheader(
+        f"📅 Daily Consumption Trend : {selected_chemical}"
+    )
+
+    daily = (
+        chem_df
+        .groupby("Date")
+        ["Consumption"]
+        .sum()
+        .reset_index()
+    )
+
+    fig_daily = px.line(
+        daily,
+        x="Date",
+        y="Consumption",
+        markers=True
+    )
+
+    fig_daily.update_layout(
+        template="plotly_white",
+        height=500
+    )
+
+    st.plotly_chart(
+        fig_daily,
+        use_container_width=True
+    )
+
+    # ==================================
+    # WEEKLY TREND
+    # ==================================
+
+    st.subheader(
+        "📆 Weekly Consumption"
+    )
+
+    weekly = (
+        chem_df
+        .groupby(
+            "Week",
+            as_index=False
+        )["Consumption"]
+        .sum()
+    )
+
+    fig_weekly = px.bar(
+        weekly,
+        x="Week",
+        y="Consumption",
+        text="Consumption",
+        color="Consumption"
+    )
+
+    fig_weekly.update_layout(
+        template="plotly_white",
+        height=500
+    )
+
+    st.plotly_chart(
+        fig_weekly,
+        use_container_width=True
+    )
+
+    # ==================================
+    # MONTHLY TREND
+    # ==================================
+
+    st.subheader(
+        "📅 Monthly Consumption"
+    )
+
+    monthly = (
+        chem_df
+        .groupby(
+            "Month",
+            as_index=False
+        )["Consumption"]
+        .sum()
+    )
+
+    fig_month = px.bar(
+        monthly,
+        x="Month",
+        y="Consumption",
+        text="Consumption",
+        color="Consumption"
+    )
+
+    fig_month.update_layout(
+        template="plotly_white",
+        height=500
+    )
+
+    st.plotly_chart(
+        fig_month,
+        use_container_width=True
+    )
+
+    # ==================================
+    # YEARLY TREND
+    # ==================================
+
+    st.subheader(
+        "📈 Yearly Consumption"
+    )
+
+    yearly = (
+        chem_df
+        .groupby(
+            "Year",
+            as_index=False
+        )["Consumption"]
+        .sum()
+    )
+
+    fig_year = px.line(
+        yearly,
+        x="Year",
+        y="Consumption",
+        markers=True
+    )
+
+    fig_year.update_layout(
+        template="plotly_white",
+        height=500
+    )
+
+    st.plotly_chart(
+        fig_year,
+        use_container_width=True
+    )
+
+    # ==================================
+    # SHIFT ANALYSIS
+    # ==================================
+
+    st.markdown("---")
+
+    st.subheader(
+        "🏭 Shift-wise Consumption"
+    )
+
+    shift_data = (
+        chem_df
+        .groupby(
+            "Shift",
+            as_index=False
+        )["Consumption"]
+        .sum()
+    )
+
+    fig_shift = px.pie(
+        shift_data,
+        names="Shift",
+        values="Consumption",
+        hole=0.55
+    )
+
+    fig_shift.update_layout(
+        height=500
+    )
+
+    st.plotly_chart(
+        fig_shift,
+        use_container_width=True
+    )
+
+    # ==================================
+    # LOCATION ANALYSIS
+    # ==================================
+
+    st.subheader(
+        "📍 Location-wise Consumption"
+    )
+
+    location_data = (
+        chem_df
+        .groupby(
+            "Location",
+            as_index=False
+        )["Consumption"]
+        .sum()
+    )
+
+    fig_location = px.bar(
+        location_data,
+        x="Location",
+        y="Consumption",
+        text="Consumption",
+        color="Consumption"
+    )
+
+    fig_location.update_layout(
+        template="plotly_white",
+        height=550
+    )
+
+    st.plotly_chart(
+        fig_location,
+        use_container_width=True
+    )
+
+    # ==================================
+    # PART A / PART B / FH
+    # ==================================
+
+    st.subheader(
+        "🏭 Consumption Distribution"
+    )
+
+    fig_location_pie = px.pie(
+        location_data,
+        names="Location",
+        values="Consumption",
+        hole=0.6
+    )
+
+    st.plotly_chart(
+        fig_location_pie,
+        use_container_width=True
+    )
+
+    # ==================================
+    # SHIFT x LOCATION HEATMAP
+    # ==================================
+
+    st.subheader(
+        "🔥 Shift vs Location"
+    )
+
+    heat = (
+        chem_df
+        .pivot_table(
+            index="Location",
+            columns="Shift",
             values="Consumption",
-            hole=0.55
+            aggfunc="sum"
         )
-    
-        fig_shift.update_layout(
-            height=500
-        )
-    
-        st.plotly_chart(
-            fig_shift,
-            use_container_width=True
-        )
-    
-        # ==================================
-        # LOCATION ANALYSIS
-        # ==================================
-    
-        st.subheader(
-            "📍 Location-wise Consumption"
-        )
-    
-        location_data = (
-            chem_df
-            .groupby(
-                "Location",
-                as_index=False
-            )["Consumption"]
-            .sum()
-        )
-    
-        fig_location = px.bar(
-            location_data,
-            x="Location",
-            y="Consumption",
-            text="Consumption",
-            color="Consumption"
-        )
-    
-        fig_location.update_layout(
-            template="plotly_white",
-            height=550
-        )
-    
-        st.plotly_chart(
-            fig_location,
-            use_container_width=True
-        )
-    
-        # ==================================
-        # PART A / PART B / FH
-        # ==================================
-    
-        st.subheader(
-            "🏭 Consumption Distribution"
-        )
-    
-        fig_location_pie = px.pie(
-            location_data,
-            names="Location",
-            values="Consumption",
-            hole=0.6
-        )
-    
-        st.plotly_chart(
-            fig_location_pie,
-            use_container_width=True
-        )
-    
-        # ==================================
-        # SHIFT x LOCATION HEATMAP
-        # ==================================
-    
-        st.subheader(
-            "🔥 Shift vs Location"
-        )
-    
-        heat = (
-            chem_df
-            .pivot_table(
-                index="Location",
-                columns="Shift",
-                values="Consumption",
-                aggfunc="sum"
-            )
-            .reset_index()
-        )
-    
-        st.dataframe(
-            heat,
-            use_container_width=True,
-            hide_index=True
-        )
-    
-        # ==================================
-        # RAW DATA
-        # ==================================
-    
-        st.markdown("---")
-    
-        st.subheader(
-            "📋 Consumption Records"
-        )
-    
-        st.dataframe(
-            chem_df.sort_values(
-                "Date",
-                ascending=False
-            ),
-            hide_index=True,
-            use_container_width=True,
-            height=450
-        )
-    
-        # ==================================
-        # DOWNLOAD
-        # ==================================
-    
-        csv = (
-            chem_df
-            .to_csv(index=False)
-            .encode("utf-8")
-        )
-    
-        st.download_button(
-            "📥 Download Consumption Report",
-            csv,
-            file_name=f"{selected_chemical}_Consumption_Report.csv",
-            mime="text/csv"
-        )
-    # =====================================================
-    # INVENTORY HEALTH
-    # =====================================================
-    
-    elif page == "Inventory Health":
-    
-        st.header("📦 Inventory Health Dashboard")
-    
-        selected_chemical = st.selectbox(
-            "🧪 Select Chemical",
-            sorted(
-                stock["Chemical"]
-                .dropna()
-                .unique()
-                .tolist()
-            ),
-            key="inventory_page"
-        )
-    
-        inventory = stock[
+        .reset_index()
+    )
+
+    st.dataframe(
+        heat,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    # ==================================
+    # RAW DATA
+    # ==================================
+
+    st.markdown("---")
+
+    st.subheader(
+        "📋 Consumption Records"
+    )
+
+    st.dataframe(
+        chem_df.sort_values(
+            "Date",
+            ascending=False
+        ),
+        hide_index=True,
+        use_container_width=True,
+        height=450
+    )
+
+    # ==================================
+    # DOWNLOAD
+    # ==================================
+
+    csv = (
+        chem_df
+        .to_csv(index=False)
+        .encode("utf-8")
+    )
+
+    st.download_button(
+        "📥 Download Consumption Report",
+        csv,
+        file_name=f"{selected_chemical}_Consumption_Report.csv",
+        mime="text/csv"
+    )
+# =====================================================
+# INVENTORY HEALTH
+# =====================================================
+
+elif page == "Inventory Health":
+
+    st.header("📦 Inventory Health Dashboard")
+
+    selected_chemical = st.selectbox(
+        "🧪 Select Chemical",
+        sorted(
             stock["Chemical"]
-            == selected_chemical
-        ].copy()
-    
-        inventory = inventory.sort_values(
-            "Date"
+            .dropna()
+            .unique()
+            .tolist()
+        ),
+        key="inventory_page"
+    )
+
+    inventory = stock[
+        stock["Chemical"]
+        == selected_chemical
+    ].copy()
+
+    inventory = inventory.sort_values(
+        "Date"
+    )
+
+    if inventory.empty:
+
+        st.warning(
+            "No Inventory Found"
         )
-    
-        if inventory.empty:
-    
-            st.warning(
-                "No Inventory Found"
+
+        st.stop()
+
+    latest = inventory.iloc[-1]
+
+    # =====================================
+    # CHEMICAL MASTER DATA
+    # =====================================
+
+    safety_stock = 0
+    reorder_level = 0
+    lead_time = 0
+
+    if not chemical_master.empty:
+
+        chem_info = chemical_master[
+            chemical_master["Chemical"]
+            ==
+            selected_chemical
+        ]
+
+        if not chem_info.empty:
+
+            safety_stock = chem_info.iloc[0][
+                "Safety Stock"
+            ]
+
+            reorder_level = chem_info.iloc[0][
+                "Reorder Level"
+            ]
+
+            lead_time = chem_info.iloc[0][
+                "Lead Time"
+            ]
+
+    # =====================================
+    # OPEN PO
+    # =====================================
+
+    open_po = 0
+
+    if not po_tracker.empty:
+
+        po_filter = po_tracker[
+            po_tracker["Chemical"]
+            ==
+            selected_chemical
+        ]
+
+        if not po_filter.empty:
+
+            open_po = po_filter[
+                "Pending Qty"
+            ].sum()
+
+    current_stock = latest[
+        "Available Stock"
+    ]
+
+    projected_stock = (
+        current_stock
+        + open_po
+    )
+
+    available_days = latest[
+        "Available Days"
+    ]
+
+    # =====================================
+    # KPI CARDS
+    # =====================================
+
+    st.markdown("---")
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+
+        st.metric(
+            "📦 Current Stock",
+            round(
+                current_stock,
+                2
             )
-    
-            st.stop()
-    
-        latest = inventory.iloc[-1]
-    
-        # =====================================
-        # CHEMICAL MASTER DATA
-        # =====================================
-    
-        safety_stock = 0
-        reorder_level = 0
-        lead_time = 0
-    
-        if not chemical_master.empty:
-    
-            chem_info = chemical_master[
-                chemical_master["Chemical"]
-                ==
-                selected_chemical
+        )
+
+    with c2:
+
+        st.metric(
+            "📅 Available Days",
+            round(
+                available_days,
+                1
+            )
+        )
+
+    with c3:
+
+        st.metric(
+            "🚚 Open PO Qty",
+            round(
+                open_po,
+                2
+            )
+        )
+
+    with c4:
+
+        st.metric(
+            "📊 Projected Stock",
+            round(
+                projected_stock,
+                2
+            )
+        )
+
+    st.markdown("---")
+
+    k1, k2, k3 = st.columns(3)
+
+    with k1:
+
+        st.metric(
+            "🛡 Safety Stock",
+            safety_stock
+        )
+
+    with k2:
+
+        st.metric(
+            "🔄 Reorder Level",
+            reorder_level
+        )
+
+    with k3:
+
+        st.metric(
+            "⏳ Lead Time",
+            lead_time
+        )
+
+    # =====================================
+    # INVENTORY STATUS
+    # =====================================
+
+    st.markdown("---")
+
+    status = latest["Status"]
+
+    if status == "Healthy":
+
+        st.success(
+            "✅ HEALTHY INVENTORY"
+        )
+
+    elif status == "Warning":
+
+        st.warning(
+            "⚠ WARNING INVENTORY"
+        )
+
+    else:
+
+        st.error(
+            "🚨 CRITICAL INVENTORY"
+        )
+
+    # =====================================
+    # STATUS CHECK
+    # =====================================
+
+    if current_stock <= safety_stock:
+
+        st.error(
+            "🚨 Current Stock Below Safety Stock"
+        )
+
+    elif current_stock <= reorder_level:
+
+        st.warning(
+            "⚠ Reorder Level Reached"
+        )
+
+    else:
+
+        st.success(
+            "✅ Inventory Above Reorder Level"
+        )
+
+    # =====================================
+    # STOCK TREND
+    # =====================================
+
+    st.subheader(
+        "📈 Available Stock Trend"
+    )
+
+    fig_stock = px.line(
+        inventory,
+        x="Date",
+        y="Available Stock",
+        markers=True
+    )
+
+    fig_stock.update_layout(
+        template="plotly_white",
+        height=500
+    )
+
+    st.plotly_chart(
+        fig_stock,
+        use_container_width=True
+    )
+
+    # =====================================
+    # AVAILABLE DAYS TREND
+    # =====================================
+
+    st.subheader(
+        "📅 Available Days Trend"
+    )
+
+    fig_days = px.line(
+        inventory,
+        x="Date",
+        y="Available Days",
+        markers=True
+    )
+
+    fig_days.update_layout(
+        template="plotly_white",
+        height=500
+    )
+
+    st.plotly_chart(
+        fig_days,
+        use_container_width=True
+    )
+
+    # =====================================
+    # STOCK VS SAFETY STOCK
+    # =====================================
+
+    st.subheader(
+        "📊 Stock vs Safety Stock"
+    )
+
+    compare_df = pd.DataFrame(
+        {
+            "Type": [
+                "Current Stock",
+                "Safety Stock",
+                "Reorder Level",
+                "Projected Stock"
+            ],
+            "Value": [
+                current_stock,
+                safety_stock,
+                reorder_level,
+                projected_stock
             ]
+        }
+    )
+
+    fig_compare = px.bar(
+        compare_df,
+        x="Type",
+        y="Value",
+        color="Type",
+        text="Value"
+    )
+
+    fig_compare.update_layout(
+        template="plotly_white",
+        height=500
+    )
+
+    st.plotly_chart(
+        fig_compare,
+        use_container_width=True
+    )
+
+    # =====================================
+    # INVENTORY HISTORY
+    # =====================================
+
+    st.subheader(
+        "📋 Inventory History"
+    )
+
+    st.dataframe(
+        inventory.sort_values(
+            "Date",
+            ascending=False
+        ),
+        hide_index=True,
+        use_container_width=True,
+        height=450
+    )
+
+    # =====================================
+    # DOWNLOAD REPORT
+    # =====================================
+
+    csv = inventory.to_csv(
+        index=False
+    ).encode(
+        "utf-8"
+    )
+
+    st.download_button(
+        "📥 Download Inventory Report",
+        csv,
+        file_name=f"{selected_chemical}_Inventory_Report.csv",
+        mime="text/csv"
+    )
     
-            if not chem_info.empty:
-    
-                safety_stock = chem_info.iloc[0][
-                    "Safety Stock"
-                ]
-    
-                reorder_level = chem_info.iloc[0][
-                    "Reorder Level"
-                ]
-    
-                lead_time = chem_info.iloc[0][
-                    "Lead Time"
-                ]
-    
-        # =====================================
-        # OPEN PO
-        # =====================================
-    
-        open_po = 0
-    
-        if not po_tracker.empty:
-    
-            po_filter = po_tracker[
-                po_tracker["Chemical"]
-                ==
-                selected_chemical
+# =====================================================
+# PROCUREMENT PLANNING
+# =====================================================
+
+elif page == "Procurement Planning":
+
+    st.header("🚚 Procurement Planning Dashboard")
+
+    selected_chemical = st.selectbox(
+        "🧪 Select Chemical",
+        sorted(
+            stock["Chemical"]
+            .dropna()
+            .unique()
+            .tolist()
+        ),
+        key="procurement_page"
+    )
+
+    chemical_stock = stock[
+        stock["Chemical"]
+        ==
+        selected_chemical
+    ].copy()
+
+    chemical_stock = (
+        chemical_stock
+        .sort_values("Date")
+    )
+
+    latest = chemical_stock.iloc[-1]
+
+    # =====================================
+    # CHEMICAL MASTER DATA
+    # =====================================
+
+    lead_time = 0
+    safety_stock = 0
+    reorder_level = 0
+
+    if not chemical_master.empty:
+
+        info = chemical_master[
+            chemical_master["Chemical"]
+            ==
+            selected_chemical
+        ]
+
+        if not info.empty:
+
+            lead_time = info.iloc[0][
+                "Lead Time"
             ]
-    
-            if not po_filter.empty:
-    
-                open_po = po_filter[
+
+            safety_stock = info.iloc[0][
+                "Safety Stock"
+            ]
+
+            reorder_level = info.iloc[0][
+                "Reorder Level"
+            ]
+
+    # =====================================
+    # PO DATA
+    # =====================================
+
+    open_po_qty = 0
+
+    if not po_tracker.empty:
+
+        chemical_po = po_tracker[
+            po_tracker["Chemical"]
+            ==
+            selected_chemical
+        ]
+
+        if not chemical_po.empty:
+
+            open_po_qty = (
+                chemical_po[
                     "Pending Qty"
-                ].sum()
-    
-        current_stock = latest[
+                ]
+                .sum()
+            )
+
+    else:
+
+        chemical_po = pd.DataFrame()
+
+    current_stock = (
+        latest[
             "Available Stock"
         ]
-    
-        projected_stock = (
-            current_stock
-            + open_po
-        )
-    
-        available_days = latest[
-            "Available Days"
+    )
+
+    three_month_requirement = (
+        latest[
+            "3 Month Requirement"
         ]
-    
-        # =====================================
-        # KPI CARDS
-        # =====================================
-    
-        st.markdown("---")
-    
-        c1, c2, c3, c4 = st.columns(4)
-    
-        with c1:
-    
-            st.metric(
-                "📦 Current Stock",
-                round(
-                    current_stock,
-                    2
-                )
+    )
+
+    projected_stock = (
+        current_stock
+        + open_po_qty
+    )
+
+    required_qty = max(
+        three_month_requirement
+        - projected_stock,
+        0
+    )
+
+    # =====================================
+    # KPI ROW
+    # =====================================
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+
+        st.metric(
+            "📦 Current Stock",
+            round(
+                current_stock,
+                2
             )
-    
-        with c2:
-    
-            st.metric(
-                "📅 Available Days",
-                round(
-                    available_days,
-                    1
-                )
-            )
-    
-        with c3:
-    
-            st.metric(
-                "🚚 Open PO Qty",
-                round(
-                    open_po,
-                    2
-                )
-            )
-    
-        with c4:
-    
-            st.metric(
-                "📊 Projected Stock",
-                round(
-                    projected_stock,
-                    2
-                )
-            )
-    
-        st.markdown("---")
-    
-        k1, k2, k3 = st.columns(3)
-    
-        with k1:
-    
-            st.metric(
-                "🛡 Safety Stock",
-                safety_stock
-            )
-    
-        with k2:
-    
-            st.metric(
-                "🔄 Reorder Level",
-                reorder_level
-            )
-    
-        with k3:
-    
-            st.metric(
-                "⏳ Lead Time",
-                lead_time
-            )
-    
-        # =====================================
-        # INVENTORY STATUS
-        # =====================================
-    
-        st.markdown("---")
-    
-        status = latest["Status"]
-    
-        if status == "Healthy":
-    
-            st.success(
-                "✅ HEALTHY INVENTORY"
-            )
-    
-        elif status == "Warning":
-    
-            st.warning(
-                "⚠ WARNING INVENTORY"
-            )
-    
-        else:
-    
-            st.error(
-                "🚨 CRITICAL INVENTORY"
-            )
-    
-        # =====================================
-        # STATUS CHECK
-        # =====================================
-    
-        if current_stock <= safety_stock:
-    
-            st.error(
-                "🚨 Current Stock Below Safety Stock"
-            )
-    
-        elif current_stock <= reorder_level:
-    
-            st.warning(
-                "⚠ Reorder Level Reached"
-            )
-    
-        else:
-    
-            st.success(
-                "✅ Inventory Above Reorder Level"
-            )
-    
-        # =====================================
-        # STOCK TREND
-        # =====================================
-    
-        st.subheader(
-            "📈 Available Stock Trend"
         )
-    
-        fig_stock = px.line(
-            inventory,
-            x="Date",
-            y="Available Stock",
-            markers=True
-        )
-    
-        fig_stock.update_layout(
-            template="plotly_white",
-            height=500
-        )
-    
-        st.plotly_chart(
-            fig_stock,
-            use_container_width=True
-        )
-    
-        # =====================================
-        # AVAILABLE DAYS TREND
-        # =====================================
-    
-        st.subheader(
-            "📅 Available Days Trend"
-        )
-    
-        fig_days = px.line(
-            inventory,
-            x="Date",
-            y="Available Days",
-            markers=True
-        )
-    
-        fig_days.update_layout(
-            template="plotly_white",
-            height=500
-        )
-    
-        st.plotly_chart(
-            fig_days,
-            use_container_width=True
-        )
-    
-        # =====================================
-        # STOCK VS SAFETY STOCK
-        # =====================================
-    
-        st.subheader(
-            "📊 Stock vs Safety Stock"
-        )
-    
-        compare_df = pd.DataFrame(
-            {
-                "Type": [
-                    "Current Stock",
-                    "Safety Stock",
-                    "Reorder Level",
-                    "Projected Stock"
-                ],
-                "Value": [
-                    current_stock,
-                    safety_stock,
-                    reorder_level,
-                    projected_stock
-                ]
-            }
-        )
-    
-        fig_compare = px.bar(
-            compare_df,
-            x="Type",
-            y="Value",
-            color="Type",
-            text="Value"
-        )
-    
-        fig_compare.update_layout(
-            template="plotly_white",
-            height=500
-        )
-    
-        st.plotly_chart(
-            fig_compare,
-            use_container_width=True
-        )
-    
-        # =====================================
-        # INVENTORY HISTORY
-        # =====================================
-    
-        st.subheader(
-            "📋 Inventory History"
-        )
-    
-        st.dataframe(
-            inventory.sort_values(
-                "Date",
-                ascending=False
-            ),
-            hide_index=True,
-            use_container_width=True,
-            height=450
-        )
-    
-        # =====================================
-        # DOWNLOAD REPORT
-        # =====================================
-    
-        csv = inventory.to_csv(
-            index=False
-        ).encode(
-            "utf-8"
-        )
-    
-        st.download_button(
-            "📥 Download Inventory Report",
-            csv,
-            file_name=f"{selected_chemical}_Inventory_Report.csv",
-            mime="text/csv"
-        )
-        
-        # =====================================================
-        # PROCUREMENT PLANNING
-        # =====================================================
-        
-        elif page == "Procurement Planning":
-        
-            st.header("🚚 Procurement Planning Dashboard")
-        
-            selected_chemical = st.selectbox(
-                "🧪 Select Chemical",
-                sorted(
-                    stock["Chemical"]
-                    .dropna()
-                    .unique()
-                    .tolist()
-                ),
-                key="procurement_page"
+
+    with c2:
+
+        st.metric(
+            "🚚 Open PO Qty",
+            round(
+                open_po_qty,
+                2
             )
-        
-            chemical_stock = stock[
-                stock["Chemical"]
-                ==
-                selected_chemical
-            ].copy()
-        
-            chemical_stock = (
-                chemical_stock
-                .sort_values("Date")
+        )
+
+    with c3:
+
+        st.metric(
+            "📊 Projected Stock",
+            round(
+                projected_stock,
+                2
             )
-        
-            latest = chemical_stock.iloc[-1]
-        
-            # =====================================
-            # CHEMICAL MASTER DATA
-            # =====================================
-        
-            lead_time = 0
-            safety_stock = 0
-            reorder_level = 0
-        
-            if not chemical_master.empty:
-        
-                info = chemical_master[
-                    chemical_master["Chemical"]
-                    ==
-                    selected_chemical
-                ]
-        
-                if not info.empty:
-        
-                    lead_time = info.iloc[0][
-                        "Lead Time"
-                    ]
-        
-                    safety_stock = info.iloc[0][
-                        "Safety Stock"
-                    ]
-        
-                    reorder_level = info.iloc[0][
-                        "Reorder Level"
-                    ]
-        
-            # =====================================
-            # PO DATA
-            # =====================================
-        
-            open_po_qty = 0
-        
-            if not po_tracker.empty:
-        
-                chemical_po = po_tracker[
-                    po_tracker["Chemical"]
-                    ==
-                    selected_chemical
-                ]
-        
-                if not chemical_po.empty:
-        
-                    open_po_qty = (
-                        chemical_po[
-                            "Pending Qty"
-                        ]
-                        .sum()
-                    )
-        
-            else:
-        
-                chemical_po = pd.DataFrame()
-        
-            current_stock = (
-                latest[
-                    "Available Stock"
-                ]
+        )
+
+    with c4:
+
+        st.metric(
+            "🔄 Required Qty",
+            round(
+                required_qty,
+                2
             )
-        
-            three_month_requirement = (
-                latest[
-                    "3 Month Requirement"
-                ]
-            )
-        
-            projected_stock = (
-                current_stock
-                + open_po_qty
-            )
-        
-            required_qty = max(
+        )
+
+    st.markdown("---")
+
+    c5, c6, c7 = st.columns(3)
+
+    with c5:
+
+        st.metric(
+            "📅 Lead Time",
+            lead_time
+        )
+
+    with c6:
+
+        st.metric(
+            "🛡 Safety Stock",
+            safety_stock
+        )
+
+    with c7:
+
+        st.metric(
+            "⚠ Reorder Level",
+            reorder_level
+        )
+
+    # =====================================
+    # PROCUREMENT DECISION
+    # =====================================
+
+    st.subheader(
+        "🛒 Procurement Recommendation"
+    )
+
+    if required_qty > 0:
+
+        st.error(
+            f"""
+            🚨 PROCUREMENT REQUIRED
+
+            Required Quantity :
+            {required_qty:.2f}
+
+            Vendor :
+            {latest['Vendor']}
+            """
+        )
+
+    else:
+
+        st.success(
+            """
+            ✅ Inventory Available
+
+            No Immediate Procurement Required
+            """
+        )
+
+    # =====================================
+    # AVAILABLE VS REQUIREMENT
+    # =====================================
+
+    st.subheader(
+        "📊 Stock vs Requirement"
+    )
+
+    compare = pd.DataFrame(
+        {
+            "Category": [
+                "Current Stock",
+                "Open PO",
+                "Projected Stock",
+                "3 Month Requirement"
+            ],
+            "Value": [
+                current_stock,
+                open_po_qty,
+                projected_stock,
                 three_month_requirement
-                - projected_stock,
-                0
-            )
-        
-            # =====================================
-            # KPI ROW
-            # =====================================
-        
-            c1, c2, c3, c4 = st.columns(4)
-        
-            with c1:
-        
-                st.metric(
-                    "📦 Current Stock",
-                    round(
-                        current_stock,
-                        2
-                    )
-                )
-        
-            with c2:
-        
-                st.metric(
-                    "🚚 Open PO Qty",
-                    round(
-                        open_po_qty,
-                        2
-                    )
-                )
-        
-            with c3:
-        
-                st.metric(
-                    "📊 Projected Stock",
-                    round(
-                        projected_stock,
-                        2
-                    )
-                )
-        
-            with c4:
-        
-                st.metric(
-                    "🔄 Required Qty",
-                    round(
-                        required_qty,
-                        2
-                    )
-                )
-        
-            st.markdown("---")
-        
-            c5, c6, c7 = st.columns(3)
-        
-            with c5:
-        
-                st.metric(
-                    "📅 Lead Time",
-                    lead_time
-                )
-        
-            with c6:
-        
-                st.metric(
-                    "🛡 Safety Stock",
-                    safety_stock
-                )
-        
-            with c7:
-        
-                st.metric(
-                    "⚠ Reorder Level",
-                    reorder_level
-                )
-        
-            # =====================================
-            # PROCUREMENT DECISION
-            # =====================================
-        
-            st.subheader(
-                "🛒 Procurement Recommendation"
-            )
-        
-            if required_qty > 0:
-        
-                st.error(
-                    f"""
-                    🚨 PROCUREMENT REQUIRED
-        
-                    Required Quantity :
-                    {required_qty:.2f}
-        
-                    Vendor :
-                    {latest['Vendor']}
-                    """
-                )
-        
-            else:
-        
-                st.success(
-                    """
-                    ✅ Inventory Available
-        
-                    No Immediate Procurement Required
-                    """
-                )
-        
-            # =====================================
-            # AVAILABLE VS REQUIREMENT
-            # =====================================
-        
-            st.subheader(
-                "📊 Stock vs Requirement"
-            )
-        
-            compare = pd.DataFrame(
-                {
-                    "Category": [
-                        "Current Stock",
-                        "Open PO",
-                        "Projected Stock",
-                        "3 Month Requirement"
-                    ],
-                    "Value": [
-                        current_stock,
-                        open_po_qty,
-                        projected_stock,
-                        three_month_requirement
-                    ]
-                }
-            )
-        
-            fig = px.bar(
-                compare,
-                x="Category",
-                y="Value",
-                color="Category",
-                text="Value"
-            )
-        
-            fig.update_layout(
-                template="plotly_white",
-                height=550
-            )
-        
-            st.plotly_chart(
-                fig,
-                use_container_width=True
-            )
-        
-            # =====================================
-            # INVENTORY HISTORY
-            # =====================================
-        
-            st.subheader(
-                "📈 Historical Stock Trend"
-            )
-        
-            fig = px.line(
-                chemical_stock,
-                x="Date",
-                y="Available Stock",
-                markers=True
-            )
-        
-            fig.update_layout(
-                template="plotly_white",
-                height=500
-            )
-        
-            st.plotly_chart(
-                fig,
-                use_container_width=True
-            )
-        
-            # =====================================
-            # PO SUMMARY
-            # =====================================
-        
-            st.subheader(
-                "🚚 Related Purchase Orders"
-            )
-        
-            if chemical_po.empty:
-        
-                st.info(
-                    "No Purchase Orders Found"
-                )
-        
-            else:
-        
-                st.dataframe(
-                    chemical_po,
-                    hide_index=True,
-                    use_container_width=True
-                )
-        
-            # =====================================
-            # REORDER PRIORITY
-            # =====================================
-        
-            st.subheader(
-                "🎯 Reorder Priority"
-            )
-        
-            available_days = latest[
-                "Available Days"
             ]
-        
-            if available_days < 15:
-        
-                priority = "High"
-        
-            elif available_days < 45:
-        
-                priority = "Medium"
-        
-            else:
-        
-                priority = "Low"
-        
-            priority_df = pd.DataFrame(
-                {
-                    "Chemical": [
-                        selected_chemical
-                    ],
-                    "Available Days": [
-                        available_days
-                    ],
-                    "Vendor": [
-                        latest["Vendor"]
-                    ],
-                    "Priority": [
-                        priority
-                    ]
-                }
+        }
+    )
+
+    fig = px.bar(
+        compare,
+        x="Category",
+        y="Value",
+        color="Category",
+        text="Value"
+    )
+
+    fig.update_layout(
+        template="plotly_white",
+        height=550
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    # =====================================
+    # INVENTORY HISTORY
+    # =====================================
+
+    st.subheader(
+        "📈 Historical Stock Trend"
+    )
+
+    fig = px.line(
+        chemical_stock,
+        x="Date",
+        y="Available Stock",
+        markers=True
+    )
+
+    fig.update_layout(
+        template="plotly_white",
+        height=500
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    # =====================================
+    # PO SUMMARY
+    # =====================================
+
+    st.subheader(
+        "🚚 Related Purchase Orders"
+    )
+
+    if chemical_po.empty:
+
+        st.info(
+            "No Purchase Orders Found"
+        )
+
+    else:
+
+        st.dataframe(
+            chemical_po,
+            hide_index=True,
+            use_container_width=True
+        )
+
+    # =====================================
+    # REORDER PRIORITY
+    # =====================================
+
+    st.subheader(
+        "🎯 Reorder Priority"
+    )
+
+    available_days = latest[
+        "Available Days"
+    ]
+
+    if available_days < 15:
+
+        priority = "High"
+
+    elif available_days < 45:
+
+        priority = "Medium"
+
+    else:
+
+        priority = "Low"
+
+    priority_df = pd.DataFrame(
+        {
+            "Chemical": [
+                selected_chemical
+            ],
+            "Available Days": [
+                available_days
+            ],
+            "Vendor": [
+                latest["Vendor"]
+            ],
+            "Priority": [
+                priority
+            ]
+        }
+    )
+
+    st.dataframe(
+        priority_df,
+        hide_index=True,
+        use_container_width=True
+    )
+
+    # =====================================
+    # DOWNLOAD REPORT
+    # =====================================
+
+    report = chemical_stock.copy()
+
+    report["Open PO Qty"] = (
+        open_po_qty
+    )
+
+    report["Projected Stock"] = (
+        projected_stock
+    )
+
+    report["Required Qty"] = (
+        required_qty
+    )
+
+    csv = (
+        report
+        .to_csv(index=False)
+        .encode("utf-8")
+    )
+
+    st.download_button(
+        "📥 Download Procurement Report",
+        csv,
+        file_name=f"{selected_chemical}_Procurement_Report.csv",
+        mime="text/csv"
+    )
+# =====================================================
+# PO TRACKER
+# =====================================================
+
+elif page == "PO Tracker":
+
+    st.header("🚚 Purchase Order Tracker")
+
+    if po_tracker.empty:
+
+        st.warning(
+            "No PO Data Found"
+        )
+
+        st.stop()
+
+    selected_chemical = st.selectbox(
+        "🧪 Select Chemical",
+        sorted(
+            po_tracker["Chemical"]
+            .dropna()
+            .unique()
+            .tolist()
+        ),
+        key="po_page"
+    )
+
+    po_data = po_tracker[
+        po_tracker["Chemical"]
+        ==
+        selected_chemical
+    ].copy()
+
+    # =====================================
+    # KPI CARDS
+    # =====================================
+
+    total_po = len(po_data)
+
+    open_po = len(
+        po_data[
+            po_data["Status"]
+            == "Open"
+        ]
+    )
+
+    pending_qty = (
+        po_data["Pending Qty"]
+        .sum()
+    )
+
+    received_qty = (
+        po_data["Received Qty"]
+        .sum()
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+
+        st.metric(
+            "PO Count",
+            total_po
+        )
+
+    with c2:
+
+        st.metric(
+            "Open PO",
+            open_po
+        )
+
+    with c3:
+
+        st.metric(
+            "Pending Qty",
+            round(
+                pending_qty,
+                2
             )
-        
-            st.dataframe(
-                priority_df,
-                hide_index=True,
-                use_container_width=True
+        )
+
+    with c4:
+
+        st.metric(
+            "Received Qty",
+            round(
+                received_qty,
+                2
             )
-        
-            # =====================================
-            # DOWNLOAD REPORT
-            # =====================================
-        
-            report = chemical_stock.copy()
-        
-            report["Open PO Qty"] = (
-                open_po_qty
-            )
-        
-            report["Projected Stock"] = (
-                projected_stock
-            )
-        
-            report["Required Qty"] = (
-                required_qty
-            )
-        
-            csv = (
-                report
-                .to_csv(index=False)
-                .encode("utf-8")
-            )
-        
-            st.download_button(
-                "📥 Download Procurement Report",
-                csv,
-                file_name=f"{selected_chemical}_Procurement_Report.csv",
-                mime="text/csv"
-            )
-            # =====================================================
-            # PO TRACKER
-            # =====================================================
-            
-            elif page == "PO Tracker":
-            
-                st.header("🚚 Purchase Order Tracker")
-            
-                if po_tracker.empty:
-            
-                    st.warning(
-                        "No PO Data Found"
-                    )
-            
-                    st.stop()
-            
-                selected_chemical = st.selectbox(
-                    "🧪 Select Chemical",
-                    sorted(
-                        po_tracker["Chemical"]
-                        .dropna()
-                        .unique()
-                        .tolist()
-                    ),
-                    key="po_page"
-                )
-            
-                po_data = po_tracker[
-                    po_tracker["Chemical"]
-                    ==
-                    selected_chemical
-                ].copy()
-            
-                # =====================================
-                # KPI CARDS
-                # =====================================
-            
-                total_po = len(po_data)
-            
-                open_po = len(
-                    po_data[
-                        po_data["Status"]
-                        == "Open"
-                    ]
-                )
-            
-                pending_qty = (
-                    po_data["Pending Qty"]
-                    .sum()
-                )
-            
-                received_qty = (
-                    po_data["Received Qty"]
-                    .sum()
-                )
-            
-                c1, c2, c3, c4 = st.columns(4)
-            
-                with c1:
-            
-                    st.metric(
-                        "PO Count",
-                        total_po
-                    )
-            
-                with c2:
-            
-                    st.metric(
-                        "Open PO",
-                        open_po
-                    )
-            
-                with c3:
-            
-                    st.metric(
-                        "Pending Qty",
-                        round(
-                            pending_qty,
-                            2
-                        )
-                    )
-            
-                with c4:
-            
-                    st.metric(
-                        "Received Qty",
-                        round(
-                            received_qty,
-                            2
-                        )
-                    )
-            
-                # =====================================
-                # STATUS DISTRIBUTION
-                # =====================================
-            
-                st.subheader(
-                    "📊 PO Status Distribution"
-                )
-            
-                status_df = (
-                    po_data
-                    .groupby(
-                        "Status",
-                        as_index=False
-                    )
-                    .size()
-                )
-            
-                fig_status = px.pie(
-                    status_df,
-                    names="Status",
-                    values="size",
-                    hole=0.55
-                )
-            
-                st.plotly_chart(
-                    fig_status,
-                    use_container_width=True
-                )
-            
-                # =====================================
-                # PENDING QTY
-                # =====================================
-            
-                st.subheader(
-                    "📦 Pending Quantity"
-                )
-            
-                fig_pending = px.bar(
-                    po_data,
-                    x="PO Number",
-                    y="Pending Qty",
-                    color="Vendor",
-                    text="Pending Qty"
-                )
-            
-                fig_pending.update_layout(
-                    template="plotly_white",
-                    height=550
-                )
-            
-                st.plotly_chart(
-                    fig_pending,
-                    use_container_width=True
-                )
-            
-                # =====================================
-                # VENDOR PERFORMANCE
-                # =====================================
-            
-                st.subheader(
-                    "🏭 Vendor Distribution"
-                )
-            
-                vendor_df = (
-                    po_data
-                    .groupby(
-                        "Vendor",
-                        as_index=False
-                    )[["Pending Qty"]]
-                    .sum()
-                )
-            
-                fig_vendor = px.pie(
-                    vendor_df,
-                    names="Vendor",
-                    values="Pending Qty",
-                    hole=0.55
-                )
-            
-                st.plotly_chart(
-                    fig_vendor,
-                    use_container_width=True
-                )
-            
-                # =====================================
-                # DELIVERY SCHEDULE
-                # =====================================
-            
-                st.subheader(
-                    "📅 Delivery Schedule"
-                )
-            
-                if "Expected Delivery Date" in po_data.columns:
-            
-                    fig_delivery = px.bar(
-                        po_data,
-                        x="Expected Delivery Date",
-                        y="Pending Qty",
-                        color="Vendor"
-                    )
-            
-                    st.plotly_chart(
-                        fig_delivery,
-                        use_container_width=True
-                    )
-            
-                # =====================================
-                # FULL PO TABLE
-                # =====================================
-            
-                st.subheader(
-                    "📋 Purchase Orders"
-                )
-            
-                st.dataframe(
-                    po_data,
-                    hide_index=True,
-                    use_container_width=True
-                )
-            
-                # =====================================
-                # DOWNLOAD
-                # =====================================
-            
-                csv = (
-                    po_data
-                    .to_csv(index=False)
-                    .encode("utf-8")
-                )
-            
-                st.download_button(
-                    "📥 Download PO Report",
-                    csv,
-                    file_name=f"{selected_chemical}_PO_Report.csv",
-                    mime="text/csv"
-                )
-                # =====================================================
-                # LOCATION ANALYSIS
-                # =====================================================
-                
-                elif page == "Location Analysis":
-                
-                    st.header("📍 Location Analysis")
-                
-                    selected_chemical = st.selectbox(
-                        "🧪 Select Chemical",
-                        sorted(
-                            consumption["Chemical"]
-                            .unique()
-                        ),
-                        key="location_page"
-                    )
-                
-                    df = consumption[
-                        consumption["Chemical"]
-                        ==
-                        selected_chemical
-                    ]
-                
-                    location_df = (
-                        df.groupby(
-                            "Location",
-                            as_index=False
-                        )["Consumption"]
-                        .sum()
-                    )
-                
-                    fig = px.bar(
-                        location_df,
-                        x="Location",
-                        y="Consumption",
-                        color="Location",
-                        text="Consumption"
-                    )
-                
-                    fig.update_layout(
-                        template="plotly_white",
-                        height=600
-                    )
-                
-                    st.plotly_chart(
-                        fig,
-                        use_container_width=True
-                    )
-                
-                    fig2 = px.pie(
-                        location_df,
-                        names="Location",
-                        values="Consumption",
-                        hole=0.6
-                    )
-                
-                    st.plotly_chart(
-                        fig2,
-                        use_container_width=True
-                    )
-                
-                    st.dataframe(
-                        location_df,
-                        use_container_width=True
-                    )
-                    # =====================================================
-                    # SHIFT ANALYSIS
-                    # =====================================================
-                    
-                    elif page == "Shift Analysis":
-                    
-                        st.header("🏭 Shift Analysis")
-                    
-                        selected_chemical = st.selectbox(
-                            "🧪 Select Chemical",
-                            sorted(
-                                consumption["Chemical"]
-                                .unique()
-                            ),
-                            key="shift_page"
-                        )
-                    
-                        df = consumption[
-                            consumption["Chemical"]
-                            ==
-                            selected_chemical
-                        ]
-                    
-                        shift_df = (
-                            df.groupby(
-                                "Shift",
-                                as_index=False
-                            )["Consumption"]
-                            .sum()
-                        )
-                    
-                        fig = px.pie(
-                            shift_df,
-                            names="Shift",
-                            values="Consumption",
-                            hole=0.60
-                        )
-                    
-                        st.plotly_chart(
-                            fig,
-                            use_container_width=True
-                        )
-                    
-                        fig2 = px.bar(
-                            shift_df,
-                            x="Shift",
-                            y="Consumption",
-                            color="Shift",
-                            text="Consumption"
-                        )
-                    
-                        st.plotly_chart(
-                            fig2,
-                            use_container_width=True
-                        )
-                    
-                        st.dataframe(
-                            shift_df,
-                            use_container_width=True
-                        )
-                        # =====================================================
-                        # VENDOR ANALYSIS
-                        # =====================================================
-                        
-                        elif page == "Vendor Analysis":
-                        
-                            st.header("🏭 Vendor Analysis")
-                        
-                            vendor_stock = (
-                                stock
-                                .groupby(
-                                    "Vendor",
-                                    as_index=False
-                                )["Available Stock"]
-                                .sum()
-                            )
-                        
-                            fig = px.bar(
-                                vendor_stock,
-                                x="Vendor",
-                                y="Available Stock",
-                                color="Vendor",
-                                text="Available Stock"
-                            )
-                        
-                            fig.update_layout(
-                                template="plotly_white",
-                                height=600
-                            )
-                        
-                            st.plotly_chart(
-                                fig,
-                                use_container_width=True
-                            )
-                        
-                            if not po_tracker.empty:
-                        
-                                vendor_po = (
-                                    po_tracker
-                                    .groupby(
-                                        "Vendor",
-                                        as_index=False
-                                    )["Pending Qty"]
-                                    .sum()
-                                )
-                        
-                                fig2 = px.pie(
-                                    vendor_po,
-                                    names="Vendor",
-                                    values="Pending Qty",
-                                    hole=0.55
-                                )
-                        
-                                st.plotly_chart(
-                                    fig2,
-                                    use_container_width=True
-                                )
-                        
-                                st.dataframe(
-                                    vendor_po,
-                                    use_container_width=True
-                                )                        
-                                                                        
+        )
+
+    # =====================================
+    # STATUS DISTRIBUTION
+    # =====================================
+
+    st.subheader(
+        "📊 PO Status Distribution"
+    )
+
+    status_df = (
+        po_data
+        .groupby(
+            "Status",
+            as_index=False
+        )
+        .size()
+    )
+
+    fig_status = px.pie(
+        status_df,
+        names="Status",
+        values="size",
+        hole=0.55
+    )
+
+    st.plotly_chart(
+        fig_status,
+        use_container_width=True
+    )
+
+    # =====================================
+    # PENDING QTY
+    # =====================================
+
+    st.subheader(
+        "📦 Pending Quantity"
+    )
+
+    fig_pending = px.bar(
+        po_data,
+        x="PO Number",
+        y="Pending Qty",
+        color="Vendor",
+        text="Pending Qty"
+    )
+
+    fig_pending.update_layout(
+        template="plotly_white",
+        height=550
+    )
+
+    st.plotly_chart(
+        fig_pending,
+        use_container_width=True
+    )
+
+    # =====================================
+    # VENDOR PERFORMANCE
+    # =====================================
+
+    st.subheader(
+        "🏭 Vendor Distribution"
+    )
+
+    vendor_df = (
+        po_data
+        .groupby(
+            "Vendor",
+            as_index=False
+        )[["Pending Qty"]]
+        .sum()
+    )
+
+    fig_vendor = px.pie(
+        vendor_df,
+        names="Vendor",
+        values="Pending Qty",
+        hole=0.55
+    )
+
+    st.plotly_chart(
+        fig_vendor,
+        use_container_width=True
+    )
+
+    # =====================================
+    # DELIVERY SCHEDULE
+    # =====================================
+
+    st.subheader(
+        "📅 Delivery Schedule"
+    )
+
+    if "Expected Delivery Date" in po_data.columns:
+
+        fig_delivery = px.bar(
+            po_data,
+            x="Expected Delivery Date",
+            y="Pending Qty",
+            color="Vendor"
+        )
+
+        st.plotly_chart(
+            fig_delivery,
+            use_container_width=True
+        )
+
+    # =====================================
+    # FULL PO TABLE
+    # =====================================
+
+    st.subheader(
+        "📋 Purchase Orders"
+    )
+
+    st.dataframe(
+        po_data,
+        hide_index=True,
+        use_container_width=True
+    )
+
+    # =====================================
+    # DOWNLOAD
+    # =====================================
+
+    csv = (
+        po_data
+        .to_csv(index=False)
+        .encode("utf-8")
+    )
+
+    st.download_button(
+        "📥 Download PO Report",
+        csv,
+        file_name=f"{selected_chemical}_PO_Report.csv",
+        mime="text/csv"
+    )
+# =====================================================
+# LOCATION ANALYSIS
+# =====================================================
+
+elif page == "Location Analysis":
+
+    st.header("📍 Location Analysis")
+
+    selected_chemical = st.selectbox(
+        "🧪 Select Chemical",
+        sorted(
+            consumption["Chemical"]
+            .unique()
+        ),
+        key="location_page"
+    )
+
+    df = consumption[
+        consumption["Chemical"]
+        ==
+        selected_chemical
+    ]
+
+    location_df = (
+        df.groupby(
+            "Location",
+            as_index=False
+        )["Consumption"]
+        .sum()
+    )
+
+    fig = px.bar(
+        location_df,
+        x="Location",
+        y="Consumption",
+        color="Location",
+        text="Consumption"
+    )
+
+    fig.update_layout(
+        template="plotly_white",
+        height=600
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    fig2 = px.pie(
+        location_df,
+        names="Location",
+        values="Consumption",
+        hole=0.6
+    )
+
+    st.plotly_chart(
+        fig2,
+        use_container_width=True
+    )
+
+    st.dataframe(
+        location_df,
+        use_container_width=True
+    )
+# =====================================================
+# SHIFT ANALYSIS
+# =====================================================
+
+elif page == "Shift Analysis":
+
+    st.header("🏭 Shift Analysis")
+
+    selected_chemical = st.selectbox(
+        "🧪 Select Chemical",
+        sorted(
+            consumption["Chemical"]
+            .unique()
+        ),
+        key="shift_page"
+    )
+
+    df = consumption[
+        consumption["Chemical"]
+        ==
+        selected_chemical
+    ]
+
+    shift_df = (
+        df.groupby(
+            "Shift",
+            as_index=False
+        )["Consumption"]
+        .sum()
+    )
+
+    fig = px.pie(
+        shift_df,
+        names="Shift",
+        values="Consumption",
+        hole=0.60
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    fig2 = px.bar(
+        shift_df,
+        x="Shift",
+        y="Consumption",
+        color="Shift",
+        text="Consumption"
+    )
+
+    st.plotly_chart(
+        fig2,
+        use_container_width=True
+    )
+
+    st.dataframe(
+        shift_df,
+        use_container_width=True
+    )
+# =====================================================
+# VENDOR ANALYSIS
+# =====================================================
+
+elif page == "Vendor Analysis":
+
+    st.header("🏭 Vendor Analysis")
+
+    vendor_stock = (
+        stock
+        .groupby(
+            "Vendor",
+            as_index=False
+        )["Available Stock"]
+        .sum()
+    )
+
+    fig = px.bar(
+        vendor_stock,
+        x="Vendor",
+        y="Available Stock",
+        color="Vendor",
+        text="Available Stock"
+    )
+
+    fig.update_layout(
+        template="plotly_white",
+        height=600
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+    if not po_tracker.empty:
+
+        vendor_po = (
+            po_tracker
+            .groupby(
+                "Vendor",
+                as_index=False
+            )["Pending Qty"]
+            .sum()
+        )
+
+        fig2 = px.pie(
+            vendor_po,
+            names="Vendor",
+            values="Pending Qty",
+            hole=0.55
+        )
+
+        st.plotly_chart(
+            fig2,
+            use_container_width=True
+        )
+
+        st.dataframe(
+            vendor_po,
+            use_container_width=True
+        )                        
+                                                
