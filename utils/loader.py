@@ -4,6 +4,10 @@ import pandas as pd
 DATA_FOLDER = "data"
 
 
+# =====================================================
+# STOCK MASTER
+# =====================================================
+
 def load_stock_master():
 
     file = os.path.join(
@@ -20,13 +24,18 @@ def load_stock_master():
         engine="openpyxl"
     )
 
-    df["Date"] = pd.to_datetime(
-        df["Date"],
-        errors="coerce"
-    )
+    if "Date" in df.columns:
+        df["Date"] = pd.to_datetime(
+            df["Date"],
+            errors="coerce"
+        )
 
     return df
 
+
+# =====================================================
+# CONSUMPTION MASTER
+# =====================================================
 
 def load_consumption_master():
 
@@ -44,17 +53,42 @@ def load_consumption_master():
         engine="openpyxl"
     )
 
+    if df.empty:
+        return df
+
     df["Date"] = pd.to_datetime(
         df["Date"],
         errors="coerce"
     )
 
+    # Fix location naming
+
+    df["Location"] = (
+        df["Location"]
+        .replace({
+            "Plant A": "Part A",
+            "Plant B": "Part B"
+        })
+    )
+
     df["Year"] = df["Date"].dt.year
-    df["Month"] = df["Date"].dt.month_name()
-    df["Week"] = df["Date"].dt.isocalendar().week
+
+    df["Month"] = df["Date"].dt.strftime(
+        "%B"
+    )
+
+    df["Week"] = (
+        df["Date"]
+        .dt.isocalendar()
+        .week
+    )
 
     return df
 
+
+# =====================================================
+# PO TRACKER
+# =====================================================
 
 def load_po_tracker():
 
@@ -66,12 +100,18 @@ def load_po_tracker():
     if not os.path.exists(file):
         return pd.DataFrame()
 
-    return pd.read_excel(
+    df = pd.read_excel(
         file,
         sheet_name="PO_Tracker",
         engine="openpyxl"
     )
 
+    return df
+
+
+# =====================================================
+# CHEMICAL MASTER
+# =====================================================
 
 def load_chemical_master():
 
@@ -83,16 +123,25 @@ def load_chemical_master():
     if not os.path.exists(file):
         return pd.DataFrame()
 
-    return pd.read_excel(
+    df = pd.read_excel(
         file,
         sheet_name="Chemical_Master",
         engine="openpyxl"
     )
 
+    return df
+
+
+# =====================================================
+# INVENTORY HEALTH
+# =====================================================
 
 def stock_health(df):
 
-    def get_status(days):
+    if df.empty:
+        return df
+
+    def health(days):
 
         if days >= 90:
             return "Healthy"
@@ -105,7 +154,7 @@ def stock_health(df):
     df["Status"] = (
         df["Available Days"]
         .fillna(0)
-        .apply(get_status)
+        .apply(health)
     )
 
     return df
