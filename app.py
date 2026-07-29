@@ -1973,16 +1973,33 @@ elif page == "Vendor Analysis":
 
     st.header("🏭 Vendor Analysis")
 
-    selected_chemical = st.selectbox(
-        "🧪 Select Chemical",
+    selected_chemicals = st.multiselect(
+        "🧪 Select Chemical(s) For Comparison",
         sorted(
             stock["Chemical"]
             .dropna()
             .unique()
             .tolist()
         ),
-        key="vendor_page"
+        default=[
+            sorted(
+                stock["Chemical"]
+                .dropna()
+                .unique()
+                .tolist()
+            )[0]
+        ]
     )
+
+    if len(selected_chemicals) == 0:
+
+        st.warning(
+            "Please select at least one chemical."
+        )
+
+        st.stop()
+
+    STOCK_UNIT = "Kg"
 
     # =====================================
     # STOCK DATA
@@ -1990,8 +2007,7 @@ elif page == "Vendor Analysis":
 
     vendor_stock = stock[
         stock["Chemical"]
-        ==
-        selected_chemical
+        .isin(selected_chemicals)
     ].copy()
 
     vendor_stock = (
@@ -2014,44 +2030,42 @@ elif page == "Vendor Analysis":
 
         vendor_po = po_tracker[
             po_tracker["Chemical"]
-            ==
-            selected_chemical
+            .isin(selected_chemicals)
         ]
 
     # =====================================
-    # KPI
+    # KPI SECTION
     # =====================================
 
-    total_stock = (
+    total_stock = round(
         vendor_stock[
             "Available Stock"
-        ]
-        .sum()
+        ].sum(),
+        2
     )
 
-    vendor_count = (
+    total_vendors = (
         vendor_stock[
             "Vendor"
-        ]
-        .nunique()
+        ].nunique()
     )
 
-    pending_qty = 0
+    total_pending = 0
 
     if not vendor_po.empty:
 
-        pending_qty = (
+        total_pending = round(
             vendor_po[
                 "Pending Qty"
-            ]
-            .sum()
+            ].sum(),
+            2
         )
 
-    open_po = 0
+    total_open_po = 0
 
     if not vendor_po.empty:
 
-        open_po = len(
+        total_open_po = len(
             vendor_po[
                 vendor_po["Status"]
                 == "Open"
@@ -2063,55 +2077,59 @@ elif page == "Vendor Analysis":
     with c1:
 
         st.metric(
-            "Chemical",
-            selected_chemical
+            "Chemicals",
+            len(selected_chemicals)
         )
 
     with c2:
 
         st.metric(
             "Vendors",
-            vendor_count
+            total_vendors
         )
 
     with c3:
 
         st.metric(
-            "Available Stock",
-            round(
-                total_stock,
-                2
-            )
+            f"Available Stock ({STOCK_UNIT})",
+            total_stock
         )
 
     with c4:
 
         st.metric(
             "Open PO",
-            open_po
+            total_open_po
         )
+
+    st.metric(
+        f"Pending Quantity ({STOCK_UNIT})",
+        total_pending
+    )
 
     st.markdown("---")
 
     # =====================================
-    # VENDOR STOCK
+    # VENDOR VS CHEMICAL STOCK
     # =====================================
 
     st.subheader(
-        f"📦 {selected_chemical} Stock by Vendor"
+        f"📦 Vendor vs Chemical Stock ({STOCK_UNIT})"
     )
 
     fig_stock = px.bar(
         vendor_stock,
         x="Vendor",
         y="Available Stock",
-        text="Available Stock",
-        color="Vendor"
+        color="Chemical",
+        barmode="group",
+        text="Available Stock"
     )
 
     fig_stock.update_layout(
         template="plotly_white",
-        height=550
+        height=600,
+        yaxis_title=f"Available Stock ({STOCK_UNIT})"
     )
 
     st.plotly_chart(
@@ -2120,19 +2138,19 @@ elif page == "Vendor Analysis":
     )
 
     # =====================================
-    # PO PENDING
+    # VENDOR VS CHEMICAL PENDING
     # =====================================
 
     if not vendor_po.empty:
 
         st.subheader(
-            f"🚚 {selected_chemical} Pending Qty by Vendor"
+            f"🚚 Vendor vs Chemical Pending Quantity ({STOCK_UNIT})"
         )
 
         vendor_pending = (
             vendor_po
             .groupby(
-                "Vendor",
+                ["Vendor", "Chemical"],
                 as_index=False
             )["Pending Qty"]
             .sum()
@@ -2142,13 +2160,15 @@ elif page == "Vendor Analysis":
             vendor_pending,
             x="Vendor",
             y="Pending Qty",
-            text="Pending Qty",
-            color="Vendor"
+            color="Chemical",
+            barmode="group",
+            text="Pending Qty"
         )
 
         fig_pending.update_layout(
             template="plotly_white",
-            height=550
+            height=600,
+            yaxis_title=f"Pending Qty ({STOCK_UNIT})"
         )
 
         st.plotly_chart(
@@ -2157,27 +2177,65 @@ elif page == "Vendor Analysis":
         )
 
     # =====================================
-    # STOCK SHARE
+    # CHEMICAL SHARE
     # =====================================
 
     st.subheader(
-        f"📊 {selected_chemical} Vendor Share"
+        "📊 Chemical Share"
     )
 
-    fig_pie = px.pie(
-        vendor_stock,
+    chemical_share = (
+        vendor_stock
+        .groupby(
+            "Chemical",
+            as_index=False
+        )["Available Stock"]
+        .sum()
+    )
+
+    fig_share = px.pie(
+        chemical_share,
+        names="Chemical",
+        values="Available Stock",
+        hole=0.60
+    )
+
+    st.plotly_chart(
+        fig_share,
+        use_container_width=True
+    )
+
+    # =====================================
+    # VENDOR SHARE
+    # =====================================
+
+    st.subheader(
+        "🏭 Vendor Share"
+    )
+
+    vendor_share = (
+        vendor_stock
+        .groupby(
+            "Vendor",
+            as_index=False
+        )["Available Stock"]
+        .sum()
+    )
+
+    fig_vendor = px.pie(
+        vendor_share,
         names="Vendor",
         values="Available Stock",
         hole=0.60
     )
 
     st.plotly_chart(
-        fig_pie,
+        fig_vendor,
         use_container_width=True
     )
 
     # =====================================
-    # VENDOR SUMMARY
+    # SUMMARY TABLE
     # =====================================
 
     st.subheader(
@@ -2195,8 +2253,7 @@ elif page == "Vendor Analysis":
             ]
         ]
         .sort_values(
-            "Available Stock",
-            ascending=False
+            ["Chemical", "Vendor"]
         )
     )
 
@@ -2217,24 +2274,29 @@ elif page == "Vendor Analysis":
         )
 
         st.dataframe(
-            vendor_po,
+            vendor_po.sort_values(
+                "Vendor"
+            ),
             hide_index=True,
-            use_container_width=True
+            use_container_width=True,
+            height=450
         )
 
     # =====================================
-    # DOWNLOAD
+    # DOWNLOAD REPORT
     # =====================================
 
+    report = summary.copy()
+
     csv = (
-        summary
+        report
         .to_csv(index=False)
         .encode("utf-8")
     )
 
     st.download_button(
-        f"📥 Download {selected_chemical} Vendor Report",
+        "📥 Download Vendor Report",
         csv,
-        file_name=f"{selected_chemical}_Vendor_Report.csv",
+        file_name="Vendor_Analysis_Report.csv",
         mime="text/csv"
     )
