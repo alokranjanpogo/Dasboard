@@ -1973,37 +1973,164 @@ elif page == "Vendor Analysis":
 
     st.header("🏭 Vendor Analysis")
 
+    selected_chemical = st.selectbox(
+        "🧪 Select Chemical",
+        sorted(
+            stock["Chemical"]
+            .dropna()
+            .unique()
+            .tolist()
+        ),
+        key="vendor_page"
+    )
+
+    # =====================================
+    # STOCK DATA
+    # =====================================
+
+    vendor_stock = stock[
+        stock["Chemical"]
+        ==
+        selected_chemical
+    ].copy()
+
     vendor_stock = (
-        stock
+        vendor_stock
+        .sort_values("Date")
         .groupby(
-            "Vendor",
+            ["Vendor", "Chemical"],
             as_index=False
-        )["Available Stock"]
-        .sum()
+        )
+        .tail(1)
     )
 
-    fig = px.bar(
-        vendor_stock,
-        x="Vendor",
-        y="Available Stock",
-        color="Vendor",
-        text="Available Stock"
-    )
+    # =====================================
+    # PO DATA
+    # =====================================
 
-    fig.update_layout(
-        template="plotly_white",
-        height=600
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
+    vendor_po = pd.DataFrame()
 
     if not po_tracker.empty:
 
-        vendor_po = (
-            po_tracker
+        vendor_po = po_tracker[
+            po_tracker["Chemical"]
+            ==
+            selected_chemical
+        ]
+
+    # =====================================
+    # KPI
+    # =====================================
+
+    total_stock = (
+        vendor_stock[
+            "Available Stock"
+        ]
+        .sum()
+    )
+
+    vendor_count = (
+        vendor_stock[
+            "Vendor"
+        ]
+        .nunique()
+    )
+
+    pending_qty = 0
+
+    if not vendor_po.empty:
+
+        pending_qty = (
+            vendor_po[
+                "Pending Qty"
+            ]
+            .sum()
+        )
+
+    open_po = 0
+
+    if not vendor_po.empty:
+
+        open_po = len(
+            vendor_po[
+                vendor_po["Status"]
+                == "Open"
+            ]
+        )
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+
+        st.metric(
+            "Chemical",
+            selected_chemical
+        )
+
+    with c2:
+
+        st.metric(
+            "Vendors",
+            vendor_count
+        )
+
+    with c3:
+
+        st.metric(
+            "Available Stock",
+            round(
+                total_stock,
+                2
+            )
+        )
+
+    with c4:
+
+        st.metric(
+            "Open PO",
+            open_po
+        )
+
+    st.markdown("---")
+
+    # =====================================
+    # VENDOR STOCK
+    # =====================================
+
+    st.subheader(
+        f"📦 {selected_chemical} Stock by Vendor"
+    )
+
+    fig_stock = px.bar(
+        vendor_stock,
+        x="Vendor",
+        y="Available Stock",
+        text="Available Stock",
+        color="Vendor"
+    )
+
+    fig_stock.update_layout(
+        template="plotly_white",
+        height=550
+    )
+
+    st.plotly_chart(
+        fig_stock,
+        use_container_width=True
+    )
+
+    # =====================================
+    # PO PENDING
+    # =====================================
+
+    if not vendor_po.empty:
+
+        st.subheader(
+            f"🚚 {selected_chemical} Pending Qty by Vendor"
+        )
+
+        vendor_pending = (
+            vendor_po
             .groupby(
                 "Vendor",
                 as_index=False
@@ -2011,20 +2138,103 @@ elif page == "Vendor Analysis":
             .sum()
         )
 
-        fig2 = px.pie(
-            vendor_po,
-            names="Vendor",
-            values="Pending Qty",
-            hole=0.55
+        fig_pending = px.bar(
+            vendor_pending,
+            x="Vendor",
+            y="Pending Qty",
+            text="Pending Qty",
+            color="Vendor"
+        )
+
+        fig_pending.update_layout(
+            template="plotly_white",
+            height=550
         )
 
         st.plotly_chart(
-            fig2,
+            fig_pending,
             use_container_width=True
+        )
+
+    # =====================================
+    # STOCK SHARE
+    # =====================================
+
+    st.subheader(
+        f"📊 {selected_chemical} Vendor Share"
+    )
+
+    fig_pie = px.pie(
+        vendor_stock,
+        names="Vendor",
+        values="Available Stock",
+        hole=0.60
+    )
+
+    st.plotly_chart(
+        fig_pie,
+        use_container_width=True
+    )
+
+    # =====================================
+    # VENDOR SUMMARY
+    # =====================================
+
+    st.subheader(
+        "📋 Vendor Summary"
+    )
+
+    summary = (
+        vendor_stock[
+            [
+                "Vendor",
+                "Chemical",
+                "Available Stock",
+                "Available Days",
+                "Status"
+            ]
+        ]
+        .sort_values(
+            "Available Stock",
+            ascending=False
+        )
+    )
+
+    st.dataframe(
+        summary,
+        hide_index=True,
+        use_container_width=True
+    )
+
+    # =====================================
+    # PO DETAILS
+    # =====================================
+
+    if not vendor_po.empty:
+
+        st.subheader(
+            "🚚 Purchase Order Details"
         )
 
         st.dataframe(
             vendor_po,
+            hide_index=True,
             use_container_width=True
-        )                        
-                                                
+        )
+
+    # =====================================
+    # DOWNLOAD
+    # =====================================
+
+    csv = (
+        summary
+        .to_csv(index=False)
+        .encode("utf-8")
+    )
+
+    st.download_button(
+        f"📥 Download {selected_chemical} Vendor Report",
+        csv,
+        file_name=f"{selected_chemical}_Vendor_Report.csv",
+        mime="text/csv"
+    )
